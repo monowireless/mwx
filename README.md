@@ -7,7 +7,7 @@ The MWX library is the part of Mono Wireless TWELITE SDK ([https://mono-wireless
 MWX ライブラリは TWELITE SDK の一部です。
 
 ## License (ライセンス)
-The MW-SLA-1 ([license/MW-SLA1-E.txt](license/MW-SLA1-E.txt), [license/MW-SLA-1J.txt](license/MW-SLA-1J.txt)) is applied.
+The MW-SLA-1 ([license/MW-SLA-1E.txt](license/MW-SLA-1E.txt), [license/MW-SLA-1J.txt](license/MW-SLA-1J.txt)) is applied.
 
 モノワイヤレスソフトウェア使用許諾契約書が適用されます。
 
