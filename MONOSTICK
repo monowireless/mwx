@@ -1,0 +1,4 @@
+#pragma once
+
+#include "boards/mwx_brd_monostick.hpp"
+using MONOSTICK = mwx::BrdMonoStick;

@@ -1,0 +1,53 @@
+{
+    "configurations": [
+        {
+            "name": "TWELITE BLUE",
+            "includePath": [
+                "${workspaceFolder}",
+                "${default}"
+            ],
+            "defines": [
+                "JN5164=5164",
+                "JENNIC_CHIP_NAME=_JN5164",
+                "JENNIC_CHIP=JN5164",
+                "JENNIC_CHIP_JN5164",
+                "${default}"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "cStandard": "c99",
+            "cppStandard": "c++11"
+        },
+        {
+            "name": "TWELITE RED",
+            "includePath": [
+                "${workspaceFolder}",
+                "${default}"
+            ],
+            "defines": [
+                "JN5169=5169",
+                "JENNIC_CHIP_NAME=_JN5169",
+                "JENNIC_CHIP=JN5169",
+                "JENNIC_CHIP_JN5169",
+                "RXPOWERADJUST_SUPPORT",
+                "${default}"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "${default}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "cStandard": "c99",
+            "cppStandard": "c++11"
+        }
+    ],
+    "version": 4
+}

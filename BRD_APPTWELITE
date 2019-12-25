@@ -1,0 +1,4 @@
+#pragma once
+
+#include "boards/mwx_brd_app_twelite.hpp"
+using BRD_APPTWELITE = mwx::BrdAppTwelite;

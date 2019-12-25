@@ -1,0 +1,5 @@
+#pragma once
+
+#include "../sensors/mwx_sns_legacy.hpp"
+#include "../sensors/legacy/LTR308ALS.hpp"
+using mwx::SnsLTR308ALS SNS_LTR308ALS;

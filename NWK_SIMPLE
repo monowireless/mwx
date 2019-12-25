@@ -1,0 +1,5 @@
+#pragma once
+
+// include network defs.
+#include "networks/mwx_nwk_simple.hpp"
+using NWK_SIMPLE = mwx::NwkSimple;
