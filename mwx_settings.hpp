@@ -5,9 +5,31 @@
 #pragma once
 
 #include <iterator>
+
 #include "twecommon.h"
 #include "twesettings.h"
+#include "twesettings_std.h"
+#include "twesettings_std_defsets.h"
+#include "twesettings_cmd.h"
+#include "twesettings_validator.h"
+
+#include "tweinteractive.h"
+
 #include "mwx_debug.h"
+
+// exportable setting information.
+//   if not set, use default instead.
+extern const char *INTRCT_USER_APP_NAME;
+extern const uint32_t INTRCT_USER_APP_ID;
+extern const TWESTG_tsElement INTRCT_USER_BASE_SETTINGS[];
+extern const TWESTG_tsElement INTRCT_USER_SLOT0_SETTINGS[];
+extern const TWESTG_tsElement INTRCT_USER_SLOT1_SETTINGS[];
+extern const TWESTG_tsElement INTRCT_USER_SLOT2_SETTINGS[];
+extern const TWESTG_tsElement INTRCT_USER_SLOT3_SETTINGS[];
+extern const TWESTG_tsElement INTRCT_USER_SLOT4_SETTINGS[];
+extern const TWESTG_tsElement INTRCT_USER_SLOT5_SETTINGS[];
+extern const TWESTG_tsElement INTRCT_USER_SLOT6_SETTINGS[];
+extern const TWESTG_tsElement INTRCT_USER_SLOT7_SETTINGS[];
 
 namespace mwx { inline namespace L1 {
 	class settings {
@@ -87,8 +109,13 @@ namespace mwx { inline namespace L1 {
 				return !(value_type::_pos == itr2._pos && value_type::_body == itr2._body); }
 		};
 
-	public:		
+	public:	
+		settings() : _psFinal(nullptr) { }
 		settings(TWESTG_tsFinal* ps) : _psFinal(ps) { }
+
+		void attach(TWESTG_tsFinal* ps) {
+			_psFinal = ps;
+		}
 
 		inline value_type operator[] (int i) {
 			return value_type(i, this);
@@ -108,6 +135,23 @@ namespace mwx { inline namespace L1 {
 
 	private:
 		TWESTG_tsFinal* _psFinal;
+	};
+
+
+	class interactive_settings {
+		settings _stgs;
+
+	public:
+		interactive_settings() {}
+		
+		void begin(uint8_t slot = 0xFF);
+
+		void loop() { TWEINTRCT_vHandleSerialInput(); }
+
+		settings get_settings() {
+			return _stgs;
+		}
+
 	};
 
 	inline void operator << (uint32_t& u32, settings::value_type& e) {

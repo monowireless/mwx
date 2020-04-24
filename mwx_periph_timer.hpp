@@ -60,8 +60,8 @@ namespace mwx { inline namespace L1 {
 
 		void setup() {
 			if (_psTimer == nullptr && _u8_timer != TIMER_UNDEF) {
-				_psTimer = new tsTimerContext();
-				memset(_psTimer, 0, sizeof(_psTimer));
+				_psTimer = new tsTimerContext;
+				memset(_psTimer, 0, sizeof(tsTimerContext));
 			}
 		}
 

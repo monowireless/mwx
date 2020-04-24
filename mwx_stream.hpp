@@ -29,6 +29,9 @@
 #define BIN 2
 
 namespace mwx { inline namespace L1 {
+    typedef void (*tfcOutput)(char character, void* arg);
+
+#if 0
     /// <summary>
     /// fprintf style stream output class
     ///  - will work on 8/16/32/64bit arguments including double.
@@ -40,8 +43,6 @@ namespace mwx { inline namespace L1 {
         int64_t _argv[MAXARGS];
         int _type;
         int _argc;
-        typedef void (*tfcOutput)(char character, void* arg);
-
 		
         // template <typename... Tail> void save_args(float head, Tail&&... tail);
         // template <typename... Tail> void save_args(const char *head, Tail&&... tail);
@@ -163,6 +164,135 @@ namespace mwx { inline namespace L1 {
             }
         }
     };
+#endif 
+
+	class _printobj {
+	public:
+		typedef void (*tf_do_print)(void *myobj, tfcOutput fn, void *pvContext);
+
+	protected:
+		const char *_fmt;
+
+		tf_do_print _pfdoprt;
+		void *_pobj;
+
+	public:
+		_printobj(const char* fmt, tf_do_print pfdoprt = nullptr, void* pobj = nullptr)
+				: _fmt(fmt)
+				, _pobj(pobj)
+				, _pfdoprt(pfdoprt) {}
+
+        void do_print(tfcOutput fn, void *pvContext) {
+			if (_pfdoprt && _pobj) {
+				_pfdoprt(_pobj, fn, pvContext);
+			} else {
+				fctprintf(fn, pvContext, _fmt);
+			}
+		}
+	};
+
+	template <typename T1>
+	class _printobj_1 : public _printobj {
+		T1 _a1;
+	public:
+		_printobj_1(const char *fmt, T1 a1) 
+				: _printobj(fmt, _printobj_1::_do_print, reinterpret_cast<void*>(this)) 
+				, _a1(a1) {}
+		static void _do_print(void *myobj, tfcOutput fn, void *pvContext) {
+			if (myobj != nullptr) {
+				_printobj_1 *pobj = reinterpret_cast<_printobj_1*>(myobj);
+				fctprintf(fn, pvContext, pobj->_fmt, pobj->_a1);
+			}
+		}
+	};
+
+	template <typename T1, typename T2>
+	class _printobj_2 : public _printobj {
+		T1 _a1;
+		T2 _a2;
+	public:
+		_printobj_2(const char *fmt, T1 a1, T2 a2) 
+				: _printobj(fmt, _printobj_2::_do_print, reinterpret_cast<void*>(this)) 
+				, _a1(a1), _a2(a2) {}
+		static void _do_print(void *myobj, tfcOutput fn, void *pvContext) {
+			if (myobj != nullptr) {
+				_printobj_2 *pobj = reinterpret_cast<_printobj_2*>(myobj);
+				fctprintf(fn, pvContext, pobj->_fmt, pobj->_a1, pobj->_a2);
+			}
+		}
+	};
+
+	template <typename T1, typename T2, typename T3>
+	class _printobj_3 : public _printobj {
+		T1 _a1;
+		T2 _a2;
+		T3 _a3;
+	public:
+		_printobj_3(const char *fmt, T1 a1, T2 a2, T3 a3) 
+				: _printobj(fmt, _printobj_3::_do_print, reinterpret_cast<void*>(this)) 
+				, _a1(a1), _a2(a2), _a3(a3) {}
+		static void _do_print(void *myobj, tfcOutput fn, void *pvContext) {
+			if (myobj != nullptr) {
+				_printobj_3 *pobj = reinterpret_cast<_printobj_3*>(myobj);
+				fctprintf(fn, pvContext, pobj->_fmt, pobj->_a1, pobj->_a2, pobj->_a3);
+			}
+		}
+	};
+
+	template <typename T1, typename T2, typename T3, typename T4>
+	class _printobj_4 : public _printobj {
+		T1 _a1;
+		T2 _a2;
+		T3 _a3;
+		T4 _a4;
+	public:
+		_printobj_4(const char *fmt, T1 a1, T2 a2, T3 a3, T4 a4) 
+				: _printobj(fmt, _printobj_4::_do_print, reinterpret_cast<void*>(this)) 
+				, _a1(a1), _a2(a2), _a3(a3), _a4(a4) {}
+		static void _do_print(void *myobj, tfcOutput fn, void *pvContext) {
+			if (myobj != nullptr) {
+				_printobj_4 *pobj = reinterpret_cast<_printobj_4*>(myobj);
+				fctprintf(fn, pvContext, pobj->_fmt, pobj->_a1, pobj->_a2, pobj->_a3, pobj->_a4);
+			}
+		}
+	};
+
+	const size_t MAX_SIZE_PRINTOBJ = sizeof(_printobj_4<double, double, double, double>);
+	class mwx_format {
+		uint8_t _pobj[MAX_SIZE_PRINTOBJ];
+
+	public:
+		mwx_format(const char* fmt) {
+			(void)new ((void*)_pobj) _printobj(fmt);
+		}
+		template <typename T1>
+		mwx_format(const char* fmt, T1 a1) {
+			static_assert(sizeof(_printobj_1<T1>) <= MAX_SIZE_PRINTOBJ, "Pre-alloc size overflow. Check MAX_SIZE_PRINTOBJ.");
+			(void)new ((void*)_pobj) _printobj_1<T1>(fmt, a1);
+		}
+		template <typename T1, typename T2>
+		mwx_format(const char* fmt, T1 a1, T2 a2) {
+			static_assert(sizeof(_printobj_2<T1, T2>) <= MAX_SIZE_PRINTOBJ, "Pre-alloc size overflow. Check MAX_SIZE_PRINTOBJ.");
+			(void)new ((void*)_pobj) _printobj_2<T1, T2>(fmt, a1, a2);
+		}
+		template <typename T1, typename T2, typename T3>
+		mwx_format(const char* fmt, T1 a1, T2 a2, T3 a3) {
+			static_assert(sizeof(_printobj_3<T1, T2, T3>) <= MAX_SIZE_PRINTOBJ, "Pre-alloc size overflow. Check MAX_SIZE_PRINTOBJ.");
+			(void)new ((void*)_pobj) _printobj_3<T1, T2, T3>(fmt, a1, a2, a3);
+		}
+		template <typename T1, typename T2, typename T3, typename T4>
+		mwx_format(const char* fmt, T1 a1, T2 a2, T3 a3, T4 a4) {
+			static_assert(sizeof(_printobj_4<T1, T2, T3, T4>) <= MAX_SIZE_PRINTOBJ, "Pre-alloc size overflow. Check MAX_SIZE_PRINTOBJ.");
+			(void)new ((void*)_pobj) _printobj_4<T1, T2, T3, T4>(fmt, a1, a2, a3, a4);
+		}
+
+        void operator ()(tfcOutput fn, void *pvContext) {
+			void *pv = (void*)_pobj;
+			reinterpret_cast<_printobj*>(pv)->do_print(fn, pvContext);
+		}
+	};
+
+
 	class MWX_Stream_Flush {};
     class MWX_Stream_EndLine {};
 
@@ -414,7 +544,6 @@ namespace mwx { inline namespace L1 {
 			prt(get_pfcOutout(), pvOutputContext);
 			return *get_Derived();
 		}
-
 
 		/**
 		 * for mwx::endl
