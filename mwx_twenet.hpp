@@ -18,6 +18,7 @@
 
 extern "C" uint32_t u32DioPortWakeUp; //! Wake Up Port 
 extern "C" uint8_t u8TimerWakeUp; //! Wake Up by Timer
+extern "C" tsFILE _sSerLegacy;
 
 extern void _MWX_vOnSleep();
 extern uint32 _ToCoNet_u32PhyChan();
@@ -275,7 +276,10 @@ namespace mwx { inline namespace L1 {
 		}
 
 		// debug
-		inline void debug_level(uint8_t u8lvl) { ToCoNet_vDebugLevel(u8lvl); }
+		inline void debug_level(uint8_t u8lvl) {
+			ToCoNet_vDebugInit(&_sSerLegacy);
+			ToCoNet_vDebugLevel(u8lvl);
+		}
 
 		// version
 		inline uint32_t get_twenet_version() { return ToCoNet_u32GetVersion(); }

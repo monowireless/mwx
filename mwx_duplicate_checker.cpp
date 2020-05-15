@@ -4,8 +4,14 @@
 
 #include "_tweltite.hpp"
 #include "mwx_duplicate_checker.hpp"
+#include "mwx_debug.h"
+const int DEBUG_LVL = 101;
 
 void mwx::L1::duplciate_checker::begin() {
+	if(au32Nodes != nullptr) {
+		return; // 初期化済み
+	}
+
 	if (u8MaxNodes == 0) {
 		setup(); // place default parameter.
 	}
@@ -46,6 +52,12 @@ bool mwx::L1::duplciate_checker::add(uint32_t u32Addr, uint8_t u8Seq) {
 	bool_t bBlank = TRUE;
 	int i;
 
+	MWX_DebugMsg(DEBUG_LVL, "\r\n{DUP: INIT %d/to=%dms/sc=%d}"
+		, u8MaxNodes
+		, TIMEOUT_ms
+		, TICK_SCALE
+	);
+	
 	// 最大値を超える u8Seq の場合、下位ビットをマスクする
 	u8Seq = u8Seq & (MAX_COUNTS - 1);
 	u8Hash = u8HashGen(u32Addr) & u8HashMask;
@@ -117,6 +129,20 @@ bool mwx::L1::duplciate_checker::add(uint32_t u32Addr, uint8_t u8Seq) {
 	au8TimeStamp[u16slot] = U8TICK(); // タイムスタンプの格納
 	bRet = _node_ele_add(&asDupChk[u16slot], u8Seq);
 
+#if 0
+	// DEBUG
+	{
+		const int DEBUG_LVL = 101;
+		MWX_DebugMsg(DEBUG_LVL, "\r\n{DUP:<T=%02d,V=%d", U8TICK(), bRet);
+
+		for(int i = 0; i < 8; i++) {
+			MWX_DebugMsg(DEBUG_LVL, "|%02X/%02X", asDupChk[u16slot].au8BmDup[i], asDupChk[u16slot].au8TickDupPkt[i]);
+		}
+
+		MWX_DebugMsg(DEBUG_LVL, ">}");
+	}
+#endif
+
 	// ハッシュ値に合わないインデックスに格納した場合はハッシュ値の
 	// インデックスとスワップする。次に同じものが来る可能性が高いため。
 	if (u16slot != u8Hash) {
@@ -182,7 +208,7 @@ bool mwx::L1::duplciate_checker::_node_ele_add(_node_ele *pDupPkt, uint8_t u8Seq
 	uint8_t u8ByteOff;
 	uint8_t u8BitOff;
 
-	u8ByteOff = u8Seq / 8; //
+	u8ByteOff = u8Seq / 8;
 	u8BitOff = 1 << (u8Seq % 8);
 
 	bool_t bRet = pDupPkt->au8BmDup[u8ByteOff] & u8BitOff;
@@ -192,22 +218,24 @@ bool mwx::L1::duplciate_checker::_node_ele_add(_node_ele *pDupPkt, uint8_t u8Seq
 		return true;
 	}
 
-	/* 古いIDをクリア(u8Seq の値から見て、最も遠いインデックスを消してしまう) */
-	uint8_t u8CleanIdx = (u8ByteOff + U8BMLEN/4) % U8BMLEN;
-	for (i = 0; i < U8BMLEN/4; i++) {
-		pDupPkt->au8BmDup[u8CleanIdx] = 0;
-		pDupPkt->au8TickDupPkt[u8CleanIdx] = 0xFF; // タイムスタンプ
+#if 0
+	// 2020/5/15 連射パケット以外は不確定要素を増すだけなので削除
+	/* 古いIDをクリア(u8Seq の値から見て、最も遠いインデックスを消してしまう) 
+	   タイムアウトまでにカウンタ(64)が１週回るような連発時を想定 */
+	uint8_t u8CleanIdx = (u8ByteOff + U8BMLEN/2) % U8BMLEN;
+	pDupPkt->au8BmDup[u8CleanIdx] = 0;
+	pDupPkt->au8TickDupPkt[u8CleanIdx] = 0xFF; // タイムスタンプ
+#endif
 
-		u8CleanIdx++;
-		if (u8CleanIdx >= U8BMLEN) {
-			u8CleanIdx = 0; // ループする
-		}
-	}
-
-	// 最後のタイムスタンプで判断する。
-	//if (pDupPkt->au8TickDupPkt[u8ByteOff] & 0x80) { // MSB が１の場合は、値が未入力
+#if 0
+	// 対象ブロック、最初の受信タイムスタンプを記録
+	if (pDupPkt->au8TickDupPkt[u8ByteOff] & 0x80) { // MSB が１の場合は、値が未入力
 		pDupPkt->au8TickDupPkt[u8ByteOff] = U8TICK();
-	//}
+	}
+#else
+	// 対象ブロック、最後に受信したタイムスタンプを記録する
+	pDupPkt->au8TickDupPkt[u8ByteOff] = U8TICK();
+#endif
 
 	return false;
 }

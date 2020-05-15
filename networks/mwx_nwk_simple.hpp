@@ -173,7 +173,8 @@ namespace mwx { inline namespace L1 {
 			uint8_t _maxnodes;
 			uint16_t _timeout_ms;
 			uint8_t _tickscale;
-			dup_check(uint8_t maxnodes = 16, uint16_t timeout_ms = 1000, uint8_t tickscale = 5) : 
+
+			dup_check(uint8_t maxnodes = 0, uint16_t timeout_ms = 0, uint8_t tickscale = 0) :
 					_maxnodes(maxnodes), _timeout_ms(timeout_ms), _tickscale(tickscale) {}
 		};
 		NwkSimple& operator << (dup_check&& v) {

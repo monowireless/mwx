@@ -167,6 +167,12 @@ mwx::periph_buttons Buttons;
  */
 mwx::twenet_mac the_mac;
 
+/**
+ * TX QUEUE cleanup flags
+ */
+extern "C" uint8 __attribute__((weak)) _toconet_tx_u8_init_queue_flag;
+uint8 _toconet_tx_u8_init_queue_flag = 1;
+
 /****************************************************************************/
 /***        Local Variables                                               ***/
 /****************************************************************************/
@@ -235,6 +241,9 @@ extern "C" void cbAppColdStart(bool_t bAfterAhiInit)
 		(void)new ((void*)&Buttons) mwx::periph_buttons();
 
 		(void)new ((void*)&the_mac) mwx::twenet_mac();
+
+		// some settings
+		_toconet_tx_u8_init_queue_flag = 0x01; // clean TX QUEUE on wakeup
 	}
 	else {
 		// Hardware basic init

@@ -46,8 +46,10 @@ namespace mwx { inline namespace L1 {
 		 */
 		typedef struct {
 			uint8_t au8BmDup[MAX_COUNTS/8]; //!< Seq番号に対応する64bit分のビットマップ
-			uint8_t au8TickDupPkt[MAX_COUNTS/8]; //!< ４つに分割したブロック内で最初に受信したシステム時刻 1カウント=32ms
+			uint8_t au8TickDupPkt[MAX_COUNTS/8]; //!< 分割したブロック内で最初に受信したシステム時刻 1カウント=32ms
 		} _node_ele;
+
+		void debugout(uint32_t u32node);
 
 	private:
 		uint32_t *au32Nodes; // ノード情報（ハッシュテーブルで管理）
@@ -68,20 +70,31 @@ namespace mwx { inline namespace L1 {
 		/**
 		 * 事前の設定
 		 */
-		void setup(uint8_t maxnodes = 16, uint16_t timeout = 1000, uint8_t tickscale = 5) {
-			u8MaxNodes = maxnodes;
-			TIMEOUT_ms = timeout;
-			TICK_SCALE = tickscale;
+		void setup(uint8_t maxnodes = 16, uint16_t timeout = 0, uint8_t tickscale = 0) {
+			u8MaxNodes = maxnodes ? maxnodes : 16;
+			TIMEOUT_ms = timeout ? timeout : 5000; // デフォルトのタイムアウトは５秒、秒10-12パケット程度まで許容できる。
+			if (TIMEOUT_ms > 50000) TIMEOUT_ms = 50000;
+
+			// tickscaleはブロックをタイムアウトするための時間スケーラ (6 なら 2^6=64ms 刻みで管理する)
+			// 最大値は 127 だが１秒おきのタイムアウトチェックまでのカウンタの空走分(64msで16カウント)を
+			// 加味してTIMEOUT_msは100カウント以内に収まるように設定する。
+			if ((1 << tickscale) * 100 > TIMEOUT_ms) {
+				TICK_SCALE = tickscale;
+			} else {
+				// 時間の刻みは 64ms から 512ms
+				for (int i = 6; i < 10; i++) {
+					if ((1 << i) * 100 > TIMEOUT_ms) {
+						TICK_SCALE = i;
+						break;
+					} 
+				}
+			}
 		}
 		
 		/**
 		 * 初期化関数
 		 */
 		void begin();
-		void begin(uint8_t maxnodes, uint16_t timeout = 1000, uint8_t tickscale = 5) {
-			setup(maxnodes, timeout, tickscale);
-			begin();
-		}
 
 		/**
 		 * パケット受信時のシーケンス番号を投入し、重複の確認を行う。

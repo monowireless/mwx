@@ -28,7 +28,7 @@ namespace mwx {
  *
  */
 void NwkSimple::_init_dup_check() {
-	_dupchk.begin(24, 2000, 5);
+	
 }
 
 /**
@@ -46,8 +46,8 @@ void NwkSimple::on_create(uint32_t& val) {
 	_config.u8RepeatMax = 2; // transmit same packet three times
 	_config.u8Type = 1; // default type
 
-	_init_dup_check();
-
+	_dupchk.setup(); // apply the default parameter.
+	
 	the_twelite.change_short_addr(_config.u8Lid);
 
 	MWX_DebugMsg(DEBUG_LVL, "{NwkSimple::on_create}");
@@ -62,6 +62,7 @@ void NwkSimple::on_create(uint32_t& val) {
  */
 void NwkSimple::on_begin(uint32_t& val) {
 	if (val == _TWENET_CALLED_FROM_TWE_TWELITE) { // called from the_twelite.begin().
+		_dupchk.begin(); // start duplicate checker
 		the_twelite.change_short_addr(_config.u8Lid);
 		MWX_DebugMsg(DEBUG_LVL, "{NwkSimple::on_begin}");
 	}
@@ -218,7 +219,7 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 		}
 
 		// if repeat life expires, no more repeating.
-		if ((u8Rpt & 0x7F) >= _config.u8RepeatMax) {
+		if ((_config.u8RepeatMax == 0) && (u8Rpt & 0x7F) >= _config.u8RepeatMax) {
 			b_repeat = false;
 		}
 
@@ -251,6 +252,7 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 
 		// if the module is packet destination, pass the packet to the app.
 		if (b_accept) {
+
 			pRx->u32DstAddr = u32AddrDst;
 			pRx->u32SrcAddr = u32AddrSrc;
 			pRx->u8Hops = u8Rpt;
@@ -265,7 +267,7 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 
 MWX_STATE(E_MWX::STATE_0, uint32_t eEvent, uint32_t u32evarg) {
 	if (eEvent == E_EVENT_TICK_SECOND) {
-		// Serial << "<sec=" << int(u32evarg) << '>';
+		MWX_DebugMsg(DEBUG_LVL, "{DUP: Clean}");
 		_dupchk.clean();
 	}
 }

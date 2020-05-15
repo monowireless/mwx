@@ -31,141 +31,6 @@
 namespace mwx { inline namespace L1 {
     typedef void (*tfcOutput)(char character, void* arg);
 
-#if 0
-    /// <summary>
-    /// fprintf style stream output class
-    ///  - will work on 8/16/32/64bit arguments including double.
-    ///  - save the arguments upto 4 items at constructor.
-    /// </summary>
-    class mwx_format {
-        static const size_t MAXARGS = 4;
-        const char* _fmt;
-        int64_t _argv[MAXARGS];
-        int _type;
-        int _argc;
-		
-        // template <typename... Tail> void save_args(float head, Tail&&... tail);
-        // template <typename... Tail> void save_args(const char *head, Tail&&... tail);
-
-        // on finish.
-        void save_args() {}
-
-        // float should be passed by double.
-        template <typename... Tail>
-        void save_args(float head, Tail&&... tail) {
-            double d = head;
-            _argv[_argc] = *(int64_t*)&d;
-            _type |= 1 << _argc;
-
-            _argc++;
-
-            // get more parameters recursively, split head and tail.
-            save_args(std::forward<Tail>(tail)...);
-        }
-
-		// specialize all of char related type (singed char is not defined)
-		#define _MWX_FMT_BYTE_TYPE() { _argv[_argc++] = (int64_t)(void*)head; save_args(std::forward<Tail>(tail)...); }
-		template <typename... Tail> void save_args(char* head, Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-		template <typename... Tail> void save_args(const char* head, Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-		template <typename... Tail> void save_args(int8_t* head, Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-		template <typename... Tail> void save_args(const int8_t* head, Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-		template <typename... Tail> void save_args(uint8_t* head, Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-		template <typename... Tail> void save_args(const uint8_t* head, Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-		template <typename... Tail, int S> void save_args(char(&head)[S], Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-		template <typename... Tail, int S> void save_args(const char(&head)[S], Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-		template <typename... Tail, int S> void save_args(int8_t(&head)[S], Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-		template <typename... Tail, int S> void save_args(const int8_t(&head)[S], Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-		template <typename... Tail, int S> void save_args(uint8_t(&head)[S], Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-		template <typename... Tail, int S> void save_args(const uint8_t(&head)[S], Tail&&... tail) { _MWX_FMT_BYTE_TYPE(); }
-
-		template <typename T, typename... Tail>
-		void save_args(typename std::enable_if< std::is_integral<T>::value, T >::type head, Tail&&... tail) {
-			_argv[_argc++] = head;
-			save_args(std::forward<Tail>(tail)...);
-		}
-
-        // other type is considered into uint type.
-        //   not sure it's complete or not...
-        template <typename Head, typename... Tail>
-        void save_args(Head&& head, Tail&&... tail)
-        {
-            static_assert(
-                   sizeof(Head) == 8
-                || sizeof(Head) == 4
-                || sizeof(Head) == 2
-                || sizeof(Head) == 1
-                , "mwx::fmt::save_args()/Unsupported argument.");
-
-            if (sizeof(Head) == 8) {
-                _argv[_argc] = *(uint64_t*)(void*)&head;
-                _type |= 1 << _argc;
-            }
-            else if (sizeof(Head) == 4) {
-                _argv[_argc] = (*(uint32_t*)(void*)&head) & 0xFFFFFFFF;
-            }
-            else if (sizeof(Head) == 2) {
-                _argv[_argc] = (*(uint16_t*)(void*)&head) & 0xFFFF;
-            }
-            else if (sizeof(Head) == 1) {
-				_argv[_argc] = (*(uint8_t*)(void*)&head) & 0xFF;
-            }
-            else {
-                // Unknown error (should be 4 or 8)
-                _argc = -1;
-                return;
-            }
-            _argc++;
-
-            // get more parameters recursively, split head and tail.
-            save_args(std::forward<Tail>(tail)...);
-        }
-
-    public:
-        // constructor with variable numbers of arguments, using parameter list.
-        template <typename... Tail>
-        mwx_format(const char* fmt, Tail&&... tail) : _argv{ 0 }, _argc(0), _type(0), _fmt(fmt) {
-            static_assert(sizeof...(tail) <= MAXARGS, "mwx::fmt()/MAX arguments count is 4.");
-
-            if (sizeof...(tail)) {
-                if (sizeof...(tail) > MAXARGS) {
-                    _argc = -1;
-                }
-                else {
-                    save_args(tail...);
-                }
-            }
-        }
-
-        // the output call (hmmm, there would be better ways ;-()
-        void operator ()(tfcOutput fn, void *pvContext) {
-            if (_argc == -1) {
-                fctprintf(fn, pvContext, "(arg err)");
-            }
-            else {
-                // should not pass 32bit or less arguments as 64bit.
-                switch (_type) {
-                case   0:	fctprintf(fn, pvContext, _fmt,  (int32_t)_argv[0],  (int32_t)_argv[1],  (int32_t)_argv[2],  (int32_t)_argv[3]); break;
-                case   1:	fctprintf(fn, pvContext, _fmt,           _argv[0],  (int32_t)_argv[1],  (int32_t)_argv[2],  (int32_t)_argv[3]); break;
-                case   2:	fctprintf(fn, pvContext, _fmt,  (int32_t)_argv[0],           _argv[1],  (int32_t)_argv[2],  (int32_t)_argv[3]); break;
-                case   3:	fctprintf(fn, pvContext, _fmt,           _argv[0],           _argv[1],  (int32_t)_argv[2],  (int32_t)_argv[3]); break;
-                case   4:	fctprintf(fn, pvContext, _fmt,  (int32_t)_argv[0],  (int32_t)_argv[1],           _argv[2],  (int32_t)_argv[3]); break;
-                case   5:	fctprintf(fn, pvContext, _fmt,           _argv[0],  (int32_t)_argv[1],           _argv[2],  (int32_t)_argv[3]); break;
-                case   6:	fctprintf(fn, pvContext, _fmt,  (int32_t)_argv[0],           _argv[1],           _argv[2],  (int32_t)_argv[3]); break;
-                case   7:	fctprintf(fn, pvContext, _fmt,           _argv[0],           _argv[1],           _argv[2],  (int32_t)_argv[3]); break;
-                case   8:	fctprintf(fn, pvContext, _fmt,  (int32_t)_argv[0],  (int32_t)_argv[1],  (int32_t)_argv[2],           _argv[3]); break;
-                case   9:	fctprintf(fn, pvContext, _fmt,           _argv[0],  (int32_t)_argv[1],  (int32_t)_argv[2],           _argv[3]); break;
-                case  10:	fctprintf(fn, pvContext, _fmt,  (int32_t)_argv[0],           _argv[1],  (int32_t)_argv[2],           _argv[3]); break;
-                case  11:	fctprintf(fn, pvContext, _fmt,           _argv[0],           _argv[1],  (int32_t)_argv[2],           _argv[3]); break;
-                case  12:	fctprintf(fn, pvContext, _fmt,  (int32_t)_argv[0],  (int32_t)_argv[1],           _argv[2],           _argv[3]); break;
-                case  13:	fctprintf(fn, pvContext, _fmt,           _argv[0],  (int32_t)_argv[1],           _argv[2],           _argv[3]); break;
-                case  14:	fctprintf(fn, pvContext, _fmt,  (int32_t)_argv[0],           _argv[1],           _argv[2],           _argv[3]); break;
-                case  15:	fctprintf(fn, pvContext, _fmt,           _argv[0],           _argv[1],           _argv[2],           _argv[3]); break;
-                }
-            }
-        }
-    };
-#endif 
-
 	class _printobj {
 	public:
 		typedef void (*tf_do_print)(void *myobj, tfcOutput fn, void *pvContext);
@@ -257,6 +122,88 @@ namespace mwx { inline namespace L1 {
 		}
 	};
 
+	template <typename T1, typename T2, typename T3, typename T4, typename T5>
+	class _printobj_5 : public _printobj {
+		T1 _a1;
+		T2 _a2;
+		T3 _a3;
+		T4 _a4;
+		T5 _a5;
+	public:
+		_printobj_5(const char *fmt, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5) 
+				: _printobj(fmt, _printobj_5::_do_print, reinterpret_cast<void*>(this)) 
+				, _a1(a1), _a2(a2), _a3(a3), _a4(a4), _a5(a5) {}
+		static void _do_print(void *myobj, tfcOutput fn, void *pvContext) {
+			if (myobj != nullptr) {
+				_printobj_5 *pobj = reinterpret_cast<_printobj_5*>(myobj);
+				fctprintf(fn, pvContext, pobj->_fmt, pobj->_a1, pobj->_a2, pobj->_a3, pobj->_a4, pobj->_a5);
+			}
+		}
+	};
+
+	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+	class _printobj_6 : public _printobj {
+		T1 _a1;
+		T2 _a2;
+		T3 _a3;
+		T4 _a4;
+		T5 _a5;
+		T6 _a6;
+	public:
+		_printobj_6(const char *fmt, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6) 
+				: _printobj(fmt, _printobj_6::_do_print, reinterpret_cast<void*>(this)) 
+				, _a1(a1), _a2(a2), _a3(a3), _a4(a4), _a5(a5), _a6(a6) {}
+		static void _do_print(void *myobj, tfcOutput fn, void *pvContext) {
+			if (myobj != nullptr) {
+				_printobj_6 *pobj = reinterpret_cast<_printobj_6*>(myobj);
+				fctprintf(fn, pvContext, pobj->_fmt, pobj->_a1, pobj->_a2, pobj->_a3, pobj->_a4, pobj->_a5, pobj->_a6);
+			}
+		}
+	};
+
+	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
+	class _printobj_7 : public _printobj {
+		T1 _a1;
+		T2 _a2;
+		T3 _a3;
+		T4 _a4;
+		T5 _a5;
+		T6 _a6;
+		T7 _a7;
+	public:
+		_printobj_7(const char *fmt, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7) 
+				: _printobj(fmt, _printobj_7::_do_print, reinterpret_cast<void*>(this)) 
+				, _a1(a1), _a2(a2), _a3(a3), _a4(a4), _a5(a5), _a6(a6), _a7(a7) {}
+		static void _do_print(void *myobj, tfcOutput fn, void *pvContext) {
+			if (myobj != nullptr) {
+				_printobj_7 *pobj = reinterpret_cast<_printobj_7*>(myobj);
+				fctprintf(fn, pvContext, pobj->_fmt, pobj->_a1, pobj->_a2, pobj->_a3, pobj->_a4, pobj->_a5, pobj->_a6, pobj->_a7);
+			}
+		}
+	};
+	
+	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8>
+	class _printobj_8 : public _printobj {
+		T1 _a1;
+		T2 _a2;
+		T3 _a3;
+		T4 _a4;
+		T5 _a5;
+		T6 _a6;
+		T7 _a7;
+		T8 _a8;
+	public:
+		_printobj_8(const char *fmt, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8) 
+				: _printobj(fmt, _printobj_8::_do_print, reinterpret_cast<void*>(this)) 
+				, _a1(a1), _a2(a2), _a3(a3), _a4(a4), _a5(a5), _a6(a6), _a7(a7), _a8(a8) {}
+		static void _do_print(void *myobj, tfcOutput fn, void *pvContext) {
+			if (myobj != nullptr) {
+				_printobj_8 *pobj = reinterpret_cast<_printobj_8*>(myobj);
+				fctprintf(fn, pvContext, pobj->_fmt, pobj->_a1, pobj->_a2, pobj->_a3, pobj->_a4, pobj->_a5, pobj->_a6, pobj->_a7, pobj->_a8);
+			}
+		}
+	};
+
 	const size_t MAX_SIZE_PRINTOBJ = sizeof(_printobj_4<double, double, double, double>);
 	class mwx_format {
 		uint8_t _pobj[MAX_SIZE_PRINTOBJ];
@@ -284,6 +231,26 @@ namespace mwx { inline namespace L1 {
 		mwx_format(const char* fmt, T1 a1, T2 a2, T3 a3, T4 a4) {
 			static_assert(sizeof(_printobj_4<T1, T2, T3, T4>) <= MAX_SIZE_PRINTOBJ, "Pre-alloc size overflow. Check MAX_SIZE_PRINTOBJ.");
 			(void)new ((void*)_pobj) _printobj_4<T1, T2, T3, T4>(fmt, a1, a2, a3, a4);
+		}
+		template <typename T1, typename T2, typename T3, typename T4, typename T5>
+		mwx_format(const char* fmt, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5) {
+			static_assert(sizeof(_printobj_5<T1, T2, T3, T4, T5>) <= MAX_SIZE_PRINTOBJ, "Pre-alloc size overflow. Check MAX_SIZE_PRINTOBJ.");
+			(void)new ((void*)_pobj) _printobj_5<T1, T2, T3, T4, T5>(fmt, a1, a2, a3, a4, a5);
+		}
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+		mwx_format(const char* fmt, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6) {
+			static_assert(sizeof(_printobj_6<T1, T2, T3, T4, T5, T6>) <= MAX_SIZE_PRINTOBJ, "Pre-alloc size overflow. Check MAX_SIZE_PRINTOBJ.");
+			(void)new ((void*)_pobj) _printobj_6<T1, T2, T3, T4, T5, T6>(fmt, a1, a2, a3, a4, a5, a6);
+		}
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
+		mwx_format(const char* fmt, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7) {
+			static_assert(sizeof(_printobj_7<T1, T2, T3, T4, T5, T6, T7>) <= MAX_SIZE_PRINTOBJ, "Pre-alloc size overflow. Check MAX_SIZE_PRINTOBJ.");
+			(void)new ((void*)_pobj) _printobj_7<T1, T2, T3, T4, T5, T6, T7>(fmt, a1, a2, a3, a4, a5, a6, a7);
+		}
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8>
+		mwx_format(const char* fmt, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8) {
+			static_assert(sizeof(_printobj_8<T1, T2, T3, T4, T5, T6, T7, T8>) <= MAX_SIZE_PRINTOBJ, "Pre-alloc size overflow. Check MAX_SIZE_PRINTOBJ.");
+			(void)new ((void*)_pobj) _printobj_8<T1, T2, T3, T4, T5, T6, T7, T8>(fmt, a1, a2, a3, a4, a5, a6, a7, a8);
 		}
 
         void operator ()(tfcOutput fn, void *pvContext) {
