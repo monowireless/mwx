@@ -404,26 +404,15 @@ extern "C" void cbToCoNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 	
 	// check for Obj.available.
 	switch (u32DeviceId) {
+	case E_AHI_DEVICE_TICK_TIMER:
+		if (Buttons) Buttons.tick();
+		break;
 	case E_AHI_DEVICE_SYSCTRL:
 		if (u32ItemBitmap & ((1UL << 22) | (1UL << 23))) {
 			PulseCounter0._int_pc(u32ItemBitmap);
 			PulseCounter1._int_pc(u32ItemBitmap);
 		}
 		break;
-	case E_AHI_DEVICE_TICK_TIMER:
-		_periph_availmap |= _PERIPH_AVAIL_TICKTIMER;
-		if (Buttons) Buttons.tick();
-		break;
-	case E_AHI_DEVICE_TIMER0:
-		_periph_availmap |= _PERIPH_AVAIL_TIMER0; break;
-	case E_AHI_DEVICE_TIMER1:
-		_periph_availmap |= _PERIPH_AVAIL_TIMER1; break;
-	case E_AHI_DEVICE_TIMER2:
-		_periph_availmap |= _PERIPH_AVAIL_TIMER2; break;
-	case E_AHI_DEVICE_TIMER3:
-		_periph_availmap |= _PERIPH_AVAIL_TIMER3; break;
-	case E_AHI_DEVICE_TIMER4:
-		_periph_availmap |= _PERIPH_AVAIL_TIMER4; break;
 	}
 
 	for (auto x : _vcbs) {
@@ -444,6 +433,23 @@ extern "C" uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 	// check for ADC capturing.
 	if (Analogue._adc_event_source(u32DeviceId)) {
 		Analogue.tick();
+	}
+
+	// set interrupt mask for ???.available().
+	switch (u32DeviceId) {
+	case E_AHI_DEVICE_TICK_TIMER:
+		_periph_availmap |= _PERIPH_AVAIL_TICKTIMER;
+		break;
+	case E_AHI_DEVICE_TIMER0:
+		_periph_availmap |= _PERIPH_AVAIL_TIMER0; break;
+	case E_AHI_DEVICE_TIMER1:
+		_periph_availmap |= _PERIPH_AVAIL_TIMER1; break;
+	case E_AHI_DEVICE_TIMER2:
+		_periph_availmap |= _PERIPH_AVAIL_TIMER2; break;
+	case E_AHI_DEVICE_TIMER3:
+		_periph_availmap |= _PERIPH_AVAIL_TIMER3; break;
+	case E_AHI_DEVICE_TIMER4:
+		_periph_availmap |= _PERIPH_AVAIL_TIMER4; break;
 	}
 
 	// call each handler.
