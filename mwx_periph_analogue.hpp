@@ -95,7 +95,7 @@ namespace mwx { inline namespace L1 {
 		 * 						           Kick the ADC when the tick() method called `capt_tick' times.
 		 * @param   kick_ev     (Optional) Kicking Event (0xFF: TickTimer, 0:Timer0, 1:Timer1, ...)
 		 */
-		void setup(bool bWaitInit = false, uint8_t kick_ev = E_AHI_DEVICE_TICK_TIMER, void (*fp_on_finish)() = nullptr) {
+		void setup(bool bWaitInit = false, uint8_t kick_ev = E_AHI_DEVICE_TICK_TIMER, void (*pf_on_finish)() = nullptr) {
 			// MWX_DebugMsg(0, "Analogue::setup()\r\n");
 
 			if (!bAHI_APRegulatorEnabled()) {
@@ -114,9 +114,14 @@ namespace mwx { inline namespace L1 {
 			// register an interrupt callback
 			vAHI_APRegisterCallback(&ADC_handler);
 
-			// set scaler
-			_u8tick_every = 1;
-			_u8tick_counter = 1;
+			// store app call backs
+			if (pf_on_finish) {
+				_pf_on_finish = pf_on_finish;
+			}
+
+			// set scaler (set non zero)
+			if (_u8tick_every == 0) _u8tick_every = 1;
+			if (_u8tick_counter == 0) _u8tick_counter = 1;
 
 			// kick event
 			_kick_ev = kick_ev;
@@ -270,8 +275,12 @@ namespace mwx { inline namespace L1 {
 				if (mask == 0) {
 					_u8status |= MASK_CAPTURED;
 
+					// MWX_DebugMsg(0, "C");
 					// on finish, call user handler.
-					if (_pf_on_finish != nullptr) (*_pf_on_finish)();
+					if (_pf_on_finish != nullptr) {
+						(*_pf_on_finish)();
+						// MWX_DebugMsg(0, "*");
+					}
 					break; // finish
 				}
 
@@ -339,7 +348,9 @@ namespace mwx { inline namespace L1 {
 				}
 
 				if (_u8status & MASK_RUN_RESUME) {
-					begin();
+					_u8tick_counter = _u8tick_every; // set resume counter
+
+					begin(); // restart again
 				}
 			}
 
