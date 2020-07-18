@@ -20,7 +20,7 @@
 #include "mwx_utils_alloc.hpp"
 
 
-extern mwx::serial_jen Serial;
+extern mwx::serial_jen Serial, Serial1;
 extern mwx::serial_parser<mwx::alloc_heap<uint8_t>> SerialParser;
 
 extern mwx::periph_twowire<MWX_TWOWIRE_BUFF> Wire;
