@@ -2,6 +2,9 @@
  * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
  * AGREEMENT).                                                   */
 
+#include <jendefs.h>
+#include <AppHardwareApi.h>
+
 #include "mwx_periph.hpp"
 
 // generate random numbers

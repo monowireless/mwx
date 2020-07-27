@@ -128,6 +128,13 @@ static inline E_PIN_STATE digitalRead(uint8_t u8pin) {
 	return (u32AHI_DioReadInput() & b) ? PIN_STATE::HIGH : PIN_STATE::LOW;
 }
 
+/**
+ * read DIO bitmap (read DIO0..DIO19)
+ */
+static inline uint32_t digitalReadBitmap() {
+	return  (u32AHI_DioReadInput()) & ((1 << mwx::PIN_DIGITAL::COUNT_DIO) - 1);
+}
+
 // GPIO interrupt
 void _MWX_periph_init();
 void attachIntDio(uint8_t u8pin, E_PIN_INT_MODE mode);

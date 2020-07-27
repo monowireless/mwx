@@ -24,10 +24,23 @@ static inline void delay(uint32_t ms) {
 		TWESYSUTL_vWaitPoll(ms);
 	}
 	else {
-		volatile uint32_t ct = ms * 4096;
-		while (ct > 0) {
-			--ct;
-		}
+		// inaccurate method
+		volatile uint32_t ct = ms * 1625; // for 16Mhz
+		while (ct > 0) --ct;
+	}
+}
+
+/**
+ * polling wait for given micro seconds.
+ */
+static inline void delayMicroseconds(uint32_t us) {
+	if (sToCoNet_Context.bToCoNetStarted) { // DEBUGGING
+		TWESYSUTL_vWaitPollMicro(us);
+	}
+	else {
+		// inaccurate method
+		volatile uint32_t ct = us + us / 2 + us / 8; // for 16Mhz
+		while (ct > 0) --ct;
 	}
 }
 
