@@ -25,7 +25,7 @@ static inline void delay(uint32_t ms) {
 	}
 	else {
 		// inaccurate method
-		volatile uint32_t ct = ms * 1625; // for 16Mhz
+		volatile uint32_t ct = ms * 1625 * 2; // for 32Mhz
 		while (ct > 0) --ct;
 	}
 }
@@ -39,7 +39,7 @@ static inline void delayMicroseconds(uint32_t us) {
 	}
 	else {
 		// inaccurate method
-		volatile uint32_t ct = us + us / 2 + us / 8; // for 16Mhz
+		volatile uint32_t ct = (us + us / 2 + us / 8) * 2; // for 32Mhz
 		while (ct > 0) --ct;
 	}
 }

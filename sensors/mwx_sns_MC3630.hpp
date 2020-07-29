@@ -18,6 +18,11 @@ namespace mwx {
             }
 
             void setup(uint32_t arg1 = 0, uint32_t arg2 = 0) {
+                bConnect = false;
+                u16FreqMode = 0;
+                u8SampleNum = 0;
+                u8Range = 0;
+                u8RangeScale = 0;
             }
 
             void begin(uint32_t arg1 = DEFAULT_CONF, 
@@ -45,7 +50,7 @@ namespace mwx {
 
 				// init, Int every 20 samples
 				if (!_reset_and_init(u16FreqMode, u8Range, u8SampleNum)) {
-					// Serial << "MC3630: cannot access the device";
+                    // Serial << "MC3630: cannot access the device";
 					bConnect = false;
 				}
 				else {
@@ -73,10 +78,13 @@ namespace mwx {
             }
 
             void wakeup() {
-				SPI.begin(0, SPISettings(2000000, SPI_CONF::MSBFIRST, SPI_CONF::SPI_MODE3));
-                if (bConnect && _read_int()) {
-                    // if samples are stored in FIFO, read them.
-                    _read_result();
+                if (bConnect) {
+                    SPI.begin(0, SPISettings(2000000, SPI_CONF::MSBFIRST, SPI_CONF::SPI_MODE3));
+
+                    if (_read_int()) {
+                        // if samples are stored in FIFO, read them.
+                        _read_result();
+                    }
                 }
             }
 
@@ -122,7 +130,6 @@ namespace mwx {
             uint8_t u8RangeScale;
 
 			bool_t bConnect;
-			bool_t bActive;
 
         private:
             inline uint8_t _spi_single_op(uint8_t cmd, uint8_t arg) {
@@ -133,6 +140,7 @@ namespace mwx {
                     // (x << (cmd)) >> d0;
                     // (x << (arg)) >> d1;
                 }
+                //Serial << mwx_format("<%02X%02X>%02X>", cmd, arg, d1);
 
                 return d1;
             }

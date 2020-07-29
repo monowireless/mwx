@@ -20,8 +20,9 @@ bool mwx::SnsMC3630::_reset_and_init( uint16_t ModeFreq, uint8_t Range, uint8_t 
     // ...abracadabra
     _spi_single_op(0x1B | MC3630_WRITE, 0x00);
 
+	// note: need enough delay (>=1ms) here.
 	delay(1);
-
+	
     // Set SPI mode
     _spi_single_op(MC3630_FREG_1 | MC3630_WRITE, 0x90);
 
@@ -35,7 +36,7 @@ bool mwx::SnsMC3630::_reset_and_init( uint16_t ModeFreq, uint8_t Range, uint8_t 
 
     // NOW read chip id (should be 0x71)
     uint8_t chip_id = _spi_single_op(MC3630_CHIP_ID | MC3630_READ, 0x00);
-    // Serial << crlf << format("MC3630 Chip ID=%02X", chip_id);
+    //Serial << crlf << format("MC3630 Chip ID=%02X", chip_id);
 	if (chip_id != 0x71) return false;
 
     // standby again
@@ -46,7 +47,7 @@ bool mwx::SnsMC3630::_reset_and_init( uint16_t ModeFreq, uint8_t Range, uint8_t 
 	_spi_single_op(MC3630_PMCR | MC3630_WRITE, ModeFreq >> 8); // Nowmal = Low Power
 	
 	// Change SPI Config (for higher clock)
-   //  SPI.begin(0, SPISettings(8000000, SPI_CONF::MSBFIRST, SPI_CONF::SPI_MODE3));
+    //SPI.begin(0, SPISettings(8000000, SPI_CONF::MSBFIRST, SPI_CONF::SPI_MODE3));
 
 	// set sampling rate
 	_spi_single_op(MC3630_RATE_1 | MC3630_WRITE, ModeFreq & 0xFF);
@@ -70,6 +71,8 @@ bool mwx::SnsMC3630::_reset_and_init( uint16_t ModeFreq, uint8_t Range, uint8_t 
 }
 
 uint8_t mwx::SnsMC3630::_read_result() {
+	if (!bConnect) return 0;
+
 	uint8_t	au8data[6] = { 0xFF,0xFF,0xFF,0xFF,0xFF,0xFF };
 	uint8_t	u8num = 0;
 
@@ -100,5 +103,6 @@ uint8_t mwx::SnsMC3630::_read_result() {
 
 	_clear_int_reg();
 
+	//Serial << '(' << int(u8num) << ')';
 	return u8num;
 }

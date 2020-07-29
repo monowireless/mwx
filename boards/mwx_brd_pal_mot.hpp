@@ -39,6 +39,8 @@ namespace mwx { inline namespace L1 {
 		// begin method (if necessary, start object here)
 		void _begin() {
 			BrdPal::_begin();
+
+			pinMode(PIN_SNS_INT, INPUT_PULLUP);
 			attachIntDio(PIN_SNS_INT, FALLING);
 		}
 
@@ -56,6 +58,10 @@ namespace mwx { inline namespace L1 {
 
 		void wakeup(uint32_t & val) {
 			BrdPal::_wakeup();
+
+			pinMode(PIN_SNS_INT, INPUT_PULLUP);
+			attachIntDio(PIN_SNS_INT, FALLING);
+
 			sns_MC3630.wakeup();
 		}
 
