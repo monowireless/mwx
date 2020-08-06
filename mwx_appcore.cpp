@@ -89,6 +89,11 @@ mwx::twenet the_twelite;
 mwx::appdefs_virt the_vapp;
 
 /**
+ * virtualized application(CTweNetCbs) instance
+ */
+mwx::appdefs_virt the_vsettings;
+
+/**
  * virtualized hardware(CTweNetCbs) instance
  */
 mwx::appdefs_virt the_vhw;
@@ -99,11 +104,12 @@ mwx::appdefs_virt the_vhw;
 mwx::appdefs_virt the_vnet;
 
 /** @brief	The maximum vcbs */
-static const int _MAX_VCBS = 3;
+static const int _MAX_VCBS = 4;
 /** @brief	The vcbs index application */
 static const int _vcbs_idx_net = 0;
 static const int _vcbs_idx_app = 1;
 static const int _vcbs_idx_hw = 2;
+static const int _vcbs_idx_settings = 3;
 /** @brief	callback handler table (app & hw) */
 static mwx::appdefs_virt* _vcbs[_MAX_VCBS];
 
@@ -213,12 +219,14 @@ extern "C" void cbAppColdStart(bool_t bAfterAhiInit)
 		(void)new ((void*)&the_twelite) mwx::twenet();
 
 		(void)new ((void*)&the_vapp) mwx::appdefs_virt();
+		(void)new ((void*)&the_vsettings) mwx::appdefs_virt();
 		(void)new ((void*)&the_vhw) mwx::appdefs_virt();
 		(void)new ((void*)&the_vnet) mwx::appdefs_virt();
 
 		_vcbs[0] = &the_vnet; // fistly handled to intercept net events.
 		_vcbs[1] = &the_vhw;
 		_vcbs[2] = &the_vapp;
+		_vcbs[3] = &the_vsettings;
 		
 		(void)new ((void*)&Serial) mwx::serial_jen(E_AHI_UART_0);
 		(void)new ((void*)&Serial1) mwx::serial_jen(E_AHI_UART_1);
@@ -374,6 +382,7 @@ extern "C" void cbToCoNet_vRxEvent(tsRxDataApp *pRx) {
 		}
 
 		if (the_vhw) { the_vhw.cbToCoNet_vRxEvent(rx); }
+		if (the_vsettings) { the_vsettings.cbToCoNet_vRxEvent(rx); }
 	}
 }
 
@@ -396,6 +405,7 @@ extern "C" void cbToCoNet_vTxEvent(uint8 u8CbId, uint8 bStatus) {
 	if (!ev._network_handled) {
 		if (the_vapp) the_vapp.cbToCoNet_vTxEvent(ev);
 		if (the_vhw) the_vhw.cbToCoNet_vTxEvent(ev);
+		if (the_vsettings) { the_vsettings.cbToCoNet_vTxEvent(ev); }
 	}
 }
 

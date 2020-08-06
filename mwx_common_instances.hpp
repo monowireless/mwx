@@ -41,5 +41,6 @@ extern mwx::periph_timer Timer4;
 extern mwx::appdefs_virt the_vapp;
 extern mwx::appdefs_virt the_vhw;
 extern mwx::appdefs_virt the_vnet;
+extern mwx::appdefs_virt the_vsettings;
 
 extern mwx::twenet_mac the_mac;

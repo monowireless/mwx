@@ -42,6 +42,10 @@ namespace mwx { inline namespace L1 {
 			_serdef._u16HectBaud = 1152;
 			_serdef._u8Conf = 0;
 
+			_surr_obj = nullptr;
+			_surr_avail = nullptr;
+			_surr_read = nullptr;
+
 			BUF_TX = 0;
 			BUF_RX = 0;
 		}
@@ -82,7 +86,7 @@ namespace mwx { inline namespace L1 {
 		}
 
 		inline int available() {
-			return (!SERIAL_bRxQueueEmpty(_serdef._u8Port));
+			return _surr_obj ? _surr_avail(_surr_obj) : (!SERIAL_bRxQueueEmpty(_serdef._u8Port));
 		}
 
 		inline void flush(void) {
@@ -90,11 +94,15 @@ namespace mwx { inline namespace L1 {
 		}
 
 		inline int read() {
-			int iChar = -1;
-			if (!SERIAL_bRxQueueEmpty(_serdef._u8Port)) {
-				iChar = SERIAL_i16RxChar(_serdef._u8Port);
+			if (_surr_obj) {
+				return _surr_read(_surr_obj);
+			} else {
+				int iChar = -1;
+				if (!SERIAL_bRxQueueEmpty(_serdef._u8Port)) {
+					iChar = SERIAL_i16RxChar(_serdef._u8Port);
+				}
+				return iChar;
 			}
-			return iChar;
 		}
 
 		inline size_t write(int n) {
@@ -124,5 +132,15 @@ namespace mwx { inline namespace L1 {
 		// class specific
 		TWE_tsFILE* get_tsFile() { return _psSer; }
 		uint8 get_Port() { return _serdef._u8Port; }
+
+		// for the_twelite.settings
+		void *_surr_obj;
+		bool (*_surr_avail)(void*);
+		int (*_surr_read)(void*);
+		void register_surrogate(void *obj, bool (*pf_avail)(void*), int (*pf_read)(void*)) {
+			_surr_obj = obj;
+			_surr_avail = pf_avail;
+			_surr_read = pf_read;
+		}
 	};
 }}

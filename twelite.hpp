@@ -9,6 +9,7 @@
 #include "boards/mwx_boards.hpp"
 #include "networks/mwx_networks.hpp"
 #include "sensors/mwx_sensors.hpp"
+#include "settings/mwx_settings.hpp"
 
 // mwx C++ core class and C bridge.
 #include "mwx_twenet.hpp"

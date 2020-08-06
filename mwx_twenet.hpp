@@ -13,6 +13,7 @@
 
 #include "mwx_debug.h"
 #include "mwx_stream.hpp"
+#include "mwx_utils.hpp"
 
 #include "networks/mwx_networks.hpp"
 
@@ -21,7 +22,11 @@ extern "C" uint8_t u8TimerWakeUp; //! Wake Up by Timer
 extern "C" tsFILE _sSerLegacy;
 
 extern void _MWX_vOnSleep();
-extern uint32 _ToCoNet_u32PhyChan();
+
+// TWENET internal defs (internal defs)
+extern "C" uint32 _ToCoNet_u32PhyChan();        // get the current channel number
+extern "C" void ToCoNet_vReg_mod_Channel_Mgr(); // enabler function for Channel Manager
+extern "C" void _ToCoNet_Mod_vReg_PRSEV();      // register mod PRSEV.
 
 namespace mwx { inline namespace L1 {
 	class twenet;
@@ -120,7 +125,7 @@ namespace mwx { inline namespace L1 {
 
 		class setting {}; // dummy super class (for static_assert)
 		_MWX_TWENET_GEN(uint32_t, appid, u32AppId, 1, );
-		_MWX_TWENET_GEN(uint32_t, chmask, u32ChMask, 0, );
+		// _MWX_TWENET_GEN(uint32_t, chmask, u32ChMask, 0, );
 		_MWX_TWENET_GEN(uint16_t, short_addr, u16ShortAddress, 0, );
 		_MWX_TWENET_GEN(uint8_t, channel, u8Channel, 0, );
 		_MWX_TWENET_GEN(uint8_t, cpu_base_clock, u8CPUClk, 0, );
@@ -136,6 +141,51 @@ namespace mwx { inline namespace L1 {
 		_MWX_TWENET_GEN(uint8_t, _no_ack_mode, bNoAckMode, 1, = 1);
 		_MWX_TWENET_GEN(uint8_t, receive_external_pan, bRxExtPan, 0, = 1);
 		_MWX_TWENET_GEN(uint8_t, rand_mode, u8RandMode, 1, );
+
+		// set channel mask (can configure up to 3 channels at once)
+		struct chmask : public setting {
+			static const uint32_t U32MASK_11_26 = 0x7FFF800UL;
+			uint32_t u32chmask;
+
+			chmask(uint32_t u32chmask_) {
+				u32chmask = u32chmask_ & U32MASK_11_26;
+			} 
+
+			// if having 2 or more
+			template <typename... Tail>
+			chmask(uint8_t ch1, uint8_t ch2, Tail&&... tail) {
+				u32chmask = pack_bits(ch1, ch2, std::forward<Tail>(tail)...);
+				u32chmask &= U32MASK_11_26;
+			}
+			void set(uint8_t setup_finised) { // if this call is during setup, the `setup_finished' is set 0.
+				sToCoNet_AppContext.u32ChMask = u32chmask;
+			}
+
+			template <class T>
+			static void to_stream(stream<T>& strm) {
+				strm << mwx::L2::crlf
+					 << mwx::mwx_format("chmask(u32ChMask)=%x", sToCoNet_AppContext.u32ChMask)
+					 << mwx::L2::flush; }
+		};
+
+		// activate channel manager
+		struct chmgr : public setting {
+			uint8_t u8ch_prime;
+			uint32_t u32chmask;
+			chmgr(uint8_t ch1 = 18, uint8_t ch2 = 0, uint8_t ch3 = 0) {
+				u8ch_prime = ch1;
+				u32chmask = (1UL << ch1) | (1UL << ch2) | (1UL << ch3);
+				u32chmask &= 0x7FFF800UL;
+			}
+			void set(uint8_t setup_finised) { // if this call is during setup, the `setup_finished' is set 0.
+				if(setup_finised == 0) {
+					sToCoNet_AppContext.u8Channel = u8ch_prime;
+					sToCoNet_AppContext.u32ChMask = u32chmask;
+					ToCoNet_vReg_mod_Channel_Mgr();
+					_ToCoNet_Mod_vReg_PRSEV(); // require libTWENET_1_3_4
+				}
+			}
+		};
 
 		template <class T>
 		twenet& operator << (T&& setobj) {
@@ -164,9 +214,9 @@ namespace mwx { inline namespace L1 {
 
 	public:
 		twenet() : receiver(), _setup_finished(0),
-				   board(the_vhw), network(the_vnet), app(the_vapp) {}
+				   board(the_vhw), network(the_vnet), app(the_vapp), settings(the_vsettings) {}
 
-		// this shall be run at setup()
+		// this shall be run at setup() as the_twelite.begin().
 		void begin() {
 			// set chmask explicitly.
 			if (sToCoNet_AppContext.u32ChMask == 0) {
@@ -185,6 +235,10 @@ namespace mwx { inline namespace L1 {
 		void _begin() {
 			uint32_t var;
 			
+			var = _TWENET_CALLED_FROM_TWE_TWELITE;
+			settings.vget().on_event(_MWX_EV_ON_BEGIN, var);
+			settings._finish_setup();
+
 			var = _TWENET_CALLED_FROM_TWE_TWELITE;
 			network.vget().on_event(_MWX_EV_ON_BEGIN, var);
 			network._finish_setup();
@@ -308,6 +362,7 @@ namespace mwx { inline namespace L1 {
 		twenet_instance_manager board;
 		twenet_instance_manager network;
 		twenet_instance_manager app;
+		twenet_instance_manager settings;
 	};
 }}
 

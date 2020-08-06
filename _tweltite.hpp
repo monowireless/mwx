@@ -62,7 +62,10 @@
 #include "mwx_periph_pulse_counter.hpp"
 
 // mwx C++ library (twesettings wrapper)
-#include "mwx_settings.hpp"
+#include "settings/mwx_settings.hpp"
+#include "settings/mwx_stgs_standard.hpp"
+
+// mwx C++ parsing library
 #include "mwx_parser.hpp"
 
 // mwx C++ global defined instances (Serial, Timer?, ...)

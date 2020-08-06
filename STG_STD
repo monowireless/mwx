@@ -1,0 +1,5 @@
+#pragma once
+
+// include settings defs.
+#include "settings/mwx_stgs_standard.hpp"
+using STG_STD = mwx::StgsStandard;

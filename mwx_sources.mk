@@ -8,8 +8,10 @@ APPSRC_CXX+=mwx_periph_analogue.cpp
 APPSRC_CXX+=mwx_stream.cpp
 APPSRC_CXX+=mwx_duplicate_checker.cpp
 
-APPSRC_CXX+=mwx_settings.cpp
-APPSRC_CXX+=mwx_settings_default.cpp
+APPSRC_CXX+=settings/mwx_settings.cpp
+APPSRC_CXX+=settings/mwx_stgs_standard.cpp
+APPSRC_CXX+=settings/mwx_stgs_standard_core.cpp
+APPSRC_CXX+=settings/mwx_stgs_standard_tbl.cpp
 
 APPSRC_CXX+=boards/mwx_brd_pal_amb.cpp
 APPSRC_CXX+=boards/mwx_brd_pal_mot.cpp
