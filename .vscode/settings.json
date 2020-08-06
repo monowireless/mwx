@@ -1,14 +1,14 @@
 {
     "C_Cpp.errorSquiggles": "Enabled",
     "C_Cpp.default.includePath": [
-        "${env:MWSDK_ROOT}/Tools/VSCode/**",
-        "${env:MWSDK_ROOT}/TWENET/current/include/**",
-        "${env:MWSDK_ROOT}/TWENET/current/src/**"
+        "../../../../Tools/VSCode/**",
+        "../../../../TWENET/current/include/**",
+        "../../../../TWENET/current/src/**"
     ],
     "C_Cpp.default.browse.path": [
-        "${env:MWSDK_ROOT}/Tools/VSCode/**",
-        "${env:MWSDK_ROOT}/TWENET/current/include/**",
-        "${env:MWSDK_ROOT}/TWENET/current/src/**"
+        "../../../../Tools/VSCode/**",
+        "../../../../TWENET/current/include/**",
+        "../../../../TWENET/current/src/**"
     ],
     "C_Cpp.default.defines": [
         "VERSION_MAIN=0",
