@@ -17,18 +17,29 @@
 #include "mwx_stream.hpp"
 #include "mwx_debug.h"
 
+#ifndef MWX_TWOWIRE_RCVBUFF
+#define MWX_TWOWIRE_RCVBUFF 32
+#endif
+
 namespace mwx { inline namespace L1 {
 	namespace WIRE_CONF {
-		/** @brief	The wire set to 100kHz */
+		const uint8_t WIRE_50KHZ = 63;
+		const uint8_t WIRE_66KHZ = 47;
+		const uint8_t WIRE_80KHZ = 39;
 		const uint8_t WIRE_100KHZ = 31;
-		/** @brief	The wire set to 400kHz */
+		const uint8_t WIRE_133KHZ = 23;
+		const uint8_t WIRE_160KHZ = 19;
+		const uint8_t WIRE_200KHZ = 15;
+		const uint8_t WIRE_266KHZ = 11;
+		const uint8_t WIRE_320KHZ = 9;
 		const uint8_t WIRE_400KHZ = 7;
+
 		const uint8_t WIRE_SPEED_MASK = 0x3F;
 		const uint8_t WIRE_PORT_ALT_MASK = 0x40;
 		const uint8_t WIRE_PORT_INIT_MASK = 0x80;
 	}
 
-	template <int SIZ = 32>
+	template <int SIZ = MWX_TWOWIRE_RCVBUFF>
 	class periph_twowire {
 		static const int DLVL = 99;
 		friend class reader;
@@ -288,11 +299,22 @@ namespace mwx { inline namespace L1 {
 		}
 
 		void begin() {
-			begin(WIRE_CONF::WIRE_100KHZ, true); // default (100K force reinit)
+			if (!_has_begun()) {
+				if (_speed_and_portalt & WIRE_CONF::WIRE_SPEED_MASK) {
+					begin(_speed_and_portalt & WIRE_CONF::WIRE_SPEED_MASK);
+				} else {
+					begin(WIRE_CONF::WIRE_100KHZ, true); // default (100K force reinit)
+				}
+			}
 		}
 
 		inline bool _has_begun() {
-			return !(_speed_and_portalt & WIRE_CONF::WIRE_PORT_INIT_MASK);
+			return (_speed_and_portalt & WIRE_CONF::WIRE_PORT_INIT_MASK);
+		}
+
+		void end() {
+			_speed_and_portalt &= ~WIRE_CONF::WIRE_PORT_INIT_MASK; // clear init bit
+			vAHI_SiMasterDisable();
 		}
 
 		/**
@@ -313,6 +335,10 @@ namespace mwx { inline namespace L1 {
 				_init_hw();
 			}
 		}
+		
+		void setClock(uint32_t speed) {
+			// do nothing
+		}
 
 		/**
 		 * @fn	uint8_t requestFrom(uint8_t u8address, size_type length, bool b_stop)
@@ -328,6 +354,9 @@ namespace mwx { inline namespace L1 {
 		size_type requestFrom(uint8_t u8address, size_type length, bool b_send_stop = true) {
 			if (_mode != MODE_NONE) return 0;
 
+			// clear que firstly.
+			_que.clear();
+			
 			// Send address with write bit set
 			vAHI_SiMasterWriteSlaveAddr(u8address, !E_AHI_SI_SLAVE_RW_SET);
 			vAHI_SiMasterSetCmdReg(
@@ -394,7 +423,9 @@ namespace mwx { inline namespace L1 {
 
 		size_type write(const value_type val) {
 			// only transmit a byte (command)
-			return std::move(write(&val, 1));
+			value_type c[1] = { val };
+			size_type r = write(c, 1);
+			return r;
 		}
 		
 		size_type write(const value_type* p_data, size_type quantity) {
@@ -501,6 +532,11 @@ namespace mwx { inline namespace L1 {
 			if (sendStop) {
 				// stop message
 				if (!cmd_tx_stop()) {
+					return 4;
+				}
+			} else {
+				// no stop
+				if (!cmd_tx_no_stop()) {
 					return 4;
 				}
 			}
@@ -697,7 +733,6 @@ namespace mwx { inline namespace L1 {
 						vAHI_SiSetLocation(TRUE);
 					}
 					vAHI_SiMasterConfigure(TRUE, FALSE, _speed_and_portalt & WIRE_CONF::WIRE_SPEED_MASK);
-
 					_speed_and_portalt |= WIRE_CONF::WIRE_PORT_INIT_MASK;
 				}
 			}
