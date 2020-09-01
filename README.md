@@ -15,25 +15,6 @@ The MW-SLA-1 ([license/MW-SLA-1E.txt](license/MW-SLA-1E.txt), [license/MW-SLA-1J
 [https://mwx.twelite.info/](https://mwx.twelite.info/)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## 修正内容
+wikiページに、リリース前の修正を主に修正内容について付記します。
+https://github.com/monowireless/mwx/wiki
