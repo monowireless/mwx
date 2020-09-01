@@ -15,15 +15,15 @@ namespace mwx { inline namespace L1 {
 	//     uint8_t b; uint32_t d;
 	//     b = G_OCTET(p); // got 0x01, now p = buf + 1
 	//     d = G_DWORD(p); // got 0x1234abcd, now p = buf + 5
-	inline uint8_t G_OCTET(uint8_t*& p) {
+	inline uint8_t G_OCTET(const uint8_t*& p) {
 		return *(p)++; 
 	}
-	inline uint16_t G_WORD(uint8_t*& p) {
+	inline uint16_t G_WORD(const uint8_t*& p) {
 		uint32_t r = *p++;
 		r = (r << 8) + *p++;
 		return r;
 	}
-	inline uint32_t G_DWORD(uint8_t*& p) {
+	inline uint32_t G_DWORD(const uint8_t*& p) {
 		uint32_t r = *p++;
 		r = (r << 8) + *p++;
 		r = (r << 8) + *p++;

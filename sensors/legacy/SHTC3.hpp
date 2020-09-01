@@ -5,11 +5,13 @@
 #pragma once
 
 // the instances
+#include "../mwx_sns_legacy.hpp"
 #include "SHTC3.h"
 
 namespace mwx {
 	// SHTC3 (Temp/Humid)
-	bool sns_proble_sht3c();
+	bool sns_proble_sht3c(uint32_t);
+	
 	using _SNS_SHTC3 = sns_legacy<tsObjData_SHTC3, vSHTC3_Init, vSHTC3_Final, sns_proble_sht3c>;
 	class SnsSHTC3 : public _SNS_SHTC3 {
 	public:

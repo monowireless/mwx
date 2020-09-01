@@ -100,21 +100,21 @@ namespace mwx { inline namespace L1 {
 	class sensor_crtp {
 		friend class sensor_virt;
 	public:
-		static bool _act(void* pobj, uint8_t method, uint32_t arg1, uint32_t arg2) {
-			bool ret = false;
+		static MWX_APIRET _act(void* pobj, uint8_t method, uint32_t arg1, uint32_t arg2) {
+			MWX_APIRET ret = true;
 			if (pobj != nullptr) {
 
 				T* derived = static_cast<T*>(pobj);
 
 				switch (method) {
 				case SENSOR::_SENSOR_METHOD_SETUP:
-					derived->setup(arg1, arg2);
+					ret = derived->setup(arg1, arg2);
 					break;
 				case SENSOR::_SENSOR_METHOD_BEGIN:
 					derived->begin(arg1, arg2);
 					break;
 				case SENSOR::_SENSOR_METHOD_EVENT:
-					derived->process_ev(arg1, arg2);
+					ret = derived->process_ev(arg1, arg2);
 					break;
 				case SENSOR::_SENSOR_METHOD_AVAIL:
 					ret = derived->available();
@@ -123,7 +123,7 @@ namespace mwx { inline namespace L1 {
 					derived->end();
 					break;
 				case SENSOR::_SENSOR_METHOD_PROBE:
-					derived->end();
+					ret = derived->probe();
 					break;
 				case SENSOR::_SENSOR_METHOD_WAKEUP:
 					derived->wakeup();

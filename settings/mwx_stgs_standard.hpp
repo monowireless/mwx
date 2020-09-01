@@ -49,6 +49,7 @@ namespace mwx { inline namespace L1 {
 
 	private: // local vars
 		TWEINTRCT_tsContext* _psIntr;
+		serial_jen::SURR_OBJ _ser_surr;
 		
 	public: // common header
 		static const uint8_t TYPE_ID = mwx::SETTINGS::STANDARD;
@@ -59,7 +60,7 @@ namespace mwx { inline namespace L1 {
 		#undef __MWX_APP_CLASS_NAME
 
 	public: // constructor, etc...
-		StgsStandard() : _psIntr(0), set(), serial() {}
+		StgsStandard() : _psIntr(0), _ser_surr{}, set(), serial() {}
 
 		// begin method (if necessary, configure object here)
 		void _setup();
@@ -104,12 +105,7 @@ public:
 		StgsStandard& operator << (SETTINGS::appname&& v) { set_appname(v._val); return *this; }
 		StgsStandard& operator << (SETTINGS::appid_default&& v) { set_default_appid(v._val); return *this; }
 		StgsStandard& operator << (SETTINGS::ch_multi&& v) { set_ch_multi(); return *this; }
-		StgsStandard& operator << (SETTINGS::open_at_start&& v) {
-			_psIntr->config.u8Mode = 1;
-			_psIntr->u16HoldUpdateScreen = 1; // refresh count (set 1 or above)
-			TWEINTRCT_vReConf(_psIntr); // apply optional settings
-			return *this;
-		}
+		StgsStandard& operator << (SETTINGS::open_at_start&& v);
 
 		// replace name/desc of item
 		void replace_item_name_desc(const TWESTG_tsMsgReplace* val) {
@@ -120,16 +116,23 @@ public:
 		uint8_t* _hide_items(uint8_t*p, uint8_t*e) {
 			return p;
 		}
+		
 		template <typename... Tail>
 		uint8_t* _hide_items(uint8_t*p, uint8_t*e, uint8_t head, Tail&&... tail) {
 			if (p + 2 < e) {
-				*p++ = head;
+				*p++ = uint8_t(head);
 				*p++ = TWESTG_DATATYPE_UNUSE;
-				return _hide_items(p + 2, e, std::forward<Tail>(tail)...);
+				return _hide_items(p, e, std::forward<Tail>(tail)...);
 			} else {
 				return nullptr;
 			}
 		}
+		
+		template <typename... Tail>
+		uint8_t* _hide_items(uint8_t*p, uint8_t*e, E_STGSTD_SETID head, Tail&&... tail) {
+			return _hide_items(p, e, uint8_t(head), std::forward<Tail>(tail)...);
+		}
+
 		template <typename... Tail>
 		bool hide_items(Tail&&... tail) {
 			uint8* p = SETSTD_CUST_COMMON + SETSTD_CUST_COMMON[0] + 1;

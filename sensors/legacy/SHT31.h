@@ -2,12 +2,8 @@
  * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
  * AGREEMENT).                                                   */
 
-#ifndef  BME280_INCLUDED
-#define  BME280_INCLUDED
-
-#if defined __cplusplus
-extern "C" {
-#endif
+#ifndef  HUM_SHT31_INCLUDED
+#define  HUM_SHT31_INCLUDED
 
 /****************************************************************************/
 /***        Include Files                                                 ***/
@@ -17,53 +13,55 @@ extern "C" {
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
-#define BME280_IDX_X 0
-#define BME280_IDX_Y 1
-#define BME280_IDX_Z 2
+#define SHT31_IDX_TEMP 0
+#define SHT31_IDX_HUMID 1
+#define SHT31_IDX_BEGIN 0
+#define SHT31_IDX_END (SHT31_IDX_HUMID+1) // should be (last idx + 1)
 
-#define BME280_IDX_BEGIN 0
-#define BME280_IDX_END (BME280_IDX_Z+1) // should be (last idx + 1)
+#define DEFAULT_SHT31_ADDRESS     (0x44)
 
-#define DEFAULT_BME280_ADDRESS		(0x76)
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
 typedef struct {
-	// protected
-	bool_t	bBusy;			// should block going into sleep
-
 	// data
-	int16	i16Temp;
-	uint16	u16Hum;
-	uint16	u16Pres;
+	int16 ai16Result[2];
 
 	// working
-	uint8	u8TickCount, u8TickWait;
-} tsObjData_BME280;
+	uint8 u8TickCount, u8TickWait;
+	uint8 u8IdxMeasuruing;
+} tsObjData_SHT31;
 
+#ifdef __cplusplus
+extern "C" {
+#endif // C++
 /****************************************************************************/
 /***        Exported Functions (state machine)                            ***/
 /****************************************************************************/
 
+void vSHT31_Init(tsObjData_SHT31 *pData, tsSnsObj *pSnsObj);
+void vSHT31_Final(tsObjData_SHT31 *pData, tsSnsObj *pSnsObj);
+
+#define i16SHT31_GetTemp(pSnsObj) ((tsObjData_SHT31 *)(pSnsObj->pData)->ai16Result[SHT31_IDX_TEMP])
+#define i16SHT31_GetHumd(pSnsObj) ((tsObjData_SHT31 *)(pSnsObj->pData)->ai16Result[SHT31_IDX_HUMID])
+
 /****************************************************************************/
 /***        Exported Functions (primitive funcs)                          ***/
 /****************************************************************************/
-void vBME280_Init(tsObjData_BME280 *pData, tsSnsObj *pSnsObj );
-bool_t bBME280_Setting();
-void vBME280_Final(tsObjData_BME280 *pData, tsSnsObj *pSnsObj);
+PUBLIC bool_t bSHT31reset();
+PUBLIC bool_t bSHT31startRead();
+PUBLIC int16 i16SHT31readResult(int16*, int16*);
 
-PUBLIC bool_t bBME280Reset();
-PUBLIC bool_t bBME280StartRead();
-PUBLIC int16 i16BME280ReadResult( int16* Temp, uint16* Pres, uint16* Hum );
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/
 /****************************************************************************/
-#if defined __cplusplus
-}
-#endif
 
-#endif  /* BME280_INCLUDED */
+#ifdef __cplusplus
+}
+#endif // C++
+
+#endif  /* HUM_SHT31_INCLUDED */
 
 /****************************************************************************/
 /***        END OF FILE                                                   ***/

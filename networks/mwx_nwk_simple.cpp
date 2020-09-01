@@ -133,10 +133,15 @@ MWX_APIRET NwkSimple::transmit(packet_tx_nwk_simple<NwkSimple>& pkt) {
 		// other header information
 		pkt.get_psTxDataApp()->u32DstAddr = 0x0000FFFF; // set broadcast
 		pkt.get_psTxDataApp()->u8Len = pkt.get_payload().size();
-		pkt.get_psTxDataApp()->u8Cmd = _config.u8Cmd;
+		pkt.get_psTxDataApp()->u8Cmd = _config.get_pkt_cmd_part();
 
 		// callback id
 		pkt.get_psTxDataApp()->u8CbId = ++_u8cbid & CBID_MASK;
+
+		// set secure flag
+		if(_config.is_mode_pkt_encrypt()) {
+			pkt.get_psTxDataApp()->bSecurePacket = 1;
+		}
 
 		// debug!
 		// pkt >> Serial;
@@ -164,7 +169,7 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 
 	if (_config.u8Type == 0x01) {
 		// if cmd is not _config.u8cmd, skip
-		if (rx.get_psRxDataApp()->u8Cmd != _config.u8Cmd) {
+		if (rx.get_psRxDataApp()->u8Cmd != _config.get_pkt_cmd_part()) {
 			return;
 		}
 
@@ -189,11 +194,35 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 			MWX_DebugMsg(DEBUG_LVL, "<dup=%d>", int(u8seq & 0x7f));
 			return;
 		}
-
+		
 		// now accepting the packet!
 		tsRxDataApp* pRx = (tsRxDataApp*)(rx.get_psRxDataApp());
 		MWX_DebugMsg(DEBUG_LVL, "{RX: %d:S=%X(%02x):D=%X:r=%d:Sq=%d}", u8Type, u8AddrSrc_Lid, u32AddrSrc, u32AddrDst, u8Rpt, pRx->u8Seq);
 
+		// secure check
+		{
+			bool b_secure_check = false;
+
+			// check secure packet or not
+			if (_config.is_mode_pkt_encrypt()) {
+				if (pRx->bSecurePkt) {
+					b_secure_check = true;
+				} else {
+					if (_config.is_mode_rcv_plain()) {
+						b_secure_check = true;
+					}
+				}
+			} else {
+				b_secure_check = true;
+			}
+
+			if (!b_secure_check) {
+				MWX_DebugMsg(DEBUG_LVL, "{REJECTED PLAIN PACKET UNDER SECURE MODE}");
+				return; // reject packet...
+			}
+		}
+
+		// packet destination check		
 		bool b_accept = false;
 		bool b_repeat = true;
 
@@ -242,7 +271,12 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 				<< tx_packet_delay(30, 100, 20);
 
 			pkt_rpt.get_psTxDataApp()->u8Seq = rx.get_psRxDataApp()->u8Seq;
-			pkt_rpt.get_psTxDataApp()->u8Cmd = _config.u8Cmd;
+			pkt_rpt.get_psTxDataApp()->u8Cmd = _config.get_pkt_cmd_part();
+
+			// secure pkt
+			if (_config.is_mode_pkt_encrypt()) {
+				pkt_rpt.get_psTxDataApp()->bSecurePacket = 1; // set encryption.
+			}
 
 			// call back id
 			pkt_rpt.get_psTxDataApp()->u8CbId = (++_u8cbid_rpt & CBID_MASK) + (CBID_MASK + 1); // set Higher bit for repeating packet.
@@ -252,7 +286,6 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 
 		// if the module is packet destination, pass the packet to the app.
 		if (b_accept) {
-
 			pRx->u32DstAddr = u32AddrDst;
 			pRx->u32SrcAddr = u32AddrSrc;
 			pRx->u8Hops = u8Rpt;

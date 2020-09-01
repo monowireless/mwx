@@ -14,7 +14,11 @@ namespace mwx { inline namespace L1 {
 		uint8_t u8Lid;
 		uint8_t u8RepeatMax;
 		uint8_t u8Type;
-		uint8_t u8Cmd;
+		uint8_t u8Cmd; // b0..b3:Packet Cmd, b7:encrypt b6:enc+rcv plain
+
+		uint8_t get_pkt_cmd_part() { return u8Cmd & 0x07; }
+		bool is_mode_pkt_encrypt() { return (u8Cmd & 0x80); }
+		bool is_mode_rcv_plain() { return is_mode_pkt_encrypt() && (u8Cmd & 0x40); }
 	};
 	
 	template <class T>
@@ -168,6 +172,18 @@ namespace mwx { inline namespace L1 {
 			network_type(uint16_t val) : _val(val) {}
 		};
 		NwkSimple& operator << (network_type&& v) { _config.u8Type = v._val; return *this; }
+
+		struct secure_pkt {
+			const uint8_t *_pukey;
+			bool _b_recv_plain_pkt;
+			secure_pkt(const uint8_t *pukey, bool b_recv_plain_pkt = false) : _pukey(pukey), _b_recv_plain_pkt(b_recv_plain_pkt)  {}
+		};
+		NwkSimple& operator << (secure_pkt&& v) {
+			the_twelite.register_crypt_key((uint8*)v._pukey); // set enc key
+			_config.u8Cmd |= 0x80; // enc mode
+			if (v._b_recv_plain_pkt) _config.u8Cmd |= 0x40; // rcv plain
+			return *this;
+		}
 
 		struct dup_check {
 			uint8_t _maxnodes;

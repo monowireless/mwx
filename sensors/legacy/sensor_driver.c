@@ -26,8 +26,13 @@ extern tsFILE sDebugStream;
  * @param pObj 管理構造体
  */
 void vSnsObj_Init(tsSnsObj *pObj) {
-	memset(pObj, 0, sizeof(tsSnsObj));
+	pObj->u8State = 0;
 	pObj->u8TickDelta = 1000 / sToCoNet_AppContext.u16TickHz;
+	pObj->pvData = NULL;
+	pObj->pvProcessSnsObj = NULL;
+	
+	// pObj->u32Opt; // setting data there, shall not overwrite.
+	pObj->u32Stat = 0;
 }
 
 /** @ingroup SNSDRV

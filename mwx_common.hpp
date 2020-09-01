@@ -7,6 +7,7 @@
 #include <cstdint> // for type name
 typedef char char_t;
 typedef uint8_t byte;
+typedef uint8_t boolean;
 
 #ifndef NULL
 #define NULL nullptr
@@ -23,6 +24,9 @@ namespace mwx { inline namespace L1 {
 		}
 		MWX_APIRET(bool b, uint32_t val) {
 			_code = (b ? 0x80000000 : 0) + (val & 0x7fffffff);
+		}
+		MWX_APIRET(uint32_t val) {
+			_code = val;
 		}
 		inline bool is_success() const { return ((_code & 0x80000000) != 0); }
 		inline bool is_fail() const { return ((_code & 0x80000000) == 0); }

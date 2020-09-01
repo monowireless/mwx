@@ -46,6 +46,9 @@ typedef struct {
 
 	void *pvData; //!< センサーデータへのポインタ
 	void (*pvProcessSnsObj)(void *, teEvent); //!< イベント処理構造体
+	
+	uint32_t u32Opt; // センサーのオプションデータ
+	uint32_t u32Stat; // センサーの状態など
 } tsSnsObj;
 
 void vSnsObj_Process(tsSnsObj *pObj, teEvent eEv);

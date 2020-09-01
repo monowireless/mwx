@@ -2,6 +2,8 @@
  * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
  * AGREEMENT).                                                   */
 
+#include <TWELITE>
+
 // TWELITE hardware like
 #include <jendefs.h>
 #include <ToCoNet.h>
@@ -33,7 +35,7 @@
 #define STGS_KIND_APPDEF 0x00		//! 親機用設定
 #define STGS_KIND_APPDEF_SLOT_MAX 8 //! 親機は SLOT0 のみ
 
-#define STGS_KIND_MAX 3				//! 種別数の最大
+#define STGS_KIND_MAX 1				//! 種別数の最大
 
 #define MENU_CONFIG 1 // 設定モード
 
@@ -58,6 +60,10 @@ extern "C" TWE_APIRET TWEINTRCT_cbu32GenericHandler(TWEINTRCT_tsContext *pContex
 extern "C" TWE_APIRET TWESTG_cbu32LoadSetting(TWE_tsBuffer *pBuf, uint8 u8kind, uint8 u8slot, uint32 u32Opt, TWESTG_tsFinal *psFinal);
 extern "C" TWE_APIRET TWESTG_cbu32SaveSetting(TWE_tsBuffer *pBuf, uint8 u8kind, uint8 u8slot, uint32 u32Opt, TWESTG_tsFinal *psFinal);
 
+void TWEINTCT_vSerUpdateScreen_hw(TWEINTRCT_tsContext *psIntr);
+void TWEINTCT_vProcessInputByte_hw(TWEINTRCT_tsContext *psIntr, TWEINTRCT_tkeycode keycode);
+void TWEINTCT_vProcessInputString_hw(TWEINTRCT_tsContext *psIntr, TWEINPSTR_tsInpStr_Context *pContext);
+TWE_APIRET TWEINTCT_u32ProcessMenuEvent_hw(TWEINTRCT_tsContext *psIntr, uint32 u32Op, uint32 u32Arg1, uint32 u32Arg2, void *vpArg);
 
 /**********************************************************************************
  * VARIABLES
@@ -65,7 +71,7 @@ extern "C" TWE_APIRET TWESTG_cbu32SaveSetting(TWE_tsBuffer *pBuf, uint8 u8kind, 
 /*!
  * tsFinal 構造体のデータ領域を宣言する
  */
-TWESTG_DECLARE_FINAL(SET_STD, STGS_MAX_SETTINGS_COUNT, 16, 4); // 確定設定リストの配列等の宣言
+TWESTG_DECLARE_FINAL(SET_STD, STGS_MAX_SETTINGS_COUNT, 32, 8); // 確定設定リストの配列等の宣言
 
 /*!
  * 確定設定リスト
@@ -148,6 +154,7 @@ static const TWEINTRCT_tsFuncs asFuncs[] = {
 	{ 0, (uint8*)"ROOT MENU", TWEINTCT_vSerUpdateScreen_defmenus, TWEINTCT_vProcessInputByte_defmenus, TWEINTCT_vProcessInputString_defmenus, TWEINTCT_u32ProcessMenuEvent_defmenus }, // standard _settings
 	{ 1, (uint8*)"CONFIG", TWEINTCT_vSerUpdateScreen_settings, TWEINTCT_vProcessInputByte_settings, TWEINTCT_vProcessInputString_settings, TWEINTCT_u32ProcessMenuEvent_settings }, // standard _settings
 	{ 2, (uint8*)"EEPROM UTIL", TWEINTCT_vSerUpdateScreen_nvmutils, TWEINTCT_vProcessInputByte_nvmutils, TWEINTCT_vProcessInputString_nvmutils, TWEINTCT_u32ProcessMenuEvent_nvmutils }, // standard _settings
+	{ 3, (uint8*)"H/W UTIL", TWEINTCT_vSerUpdateScreen_hw, TWEINTCT_vProcessInputByte_hw, TWEINTCT_vProcessInputString_hw, TWEINTCT_u32ProcessMenuEvent_hw }, // standard _settings
 	{ 0xFF, NULL, NULL, NULL }
 };
 
@@ -325,6 +332,9 @@ TWE_APIRET TWEINTRCT_cbu32GenericHandler(TWEINTRCT_tsContext *pContext, uint32 u
 		break;
 
 	case E_TWEINRCT_OP_RESET: // モジュールリセットを行う
+		Serial << crlf << "!INF RESET SYSTEM...";
+		delay(100);
+
 		vAHI_SwReset();
 		break;
 
@@ -418,6 +428,186 @@ TWE_APIRET TWEINTRCT_cbu32GenericHandler(TWEINTRCT_tsContext *pContext, uint32 u
 	return u32ApiRet;
 }
 
+/*********************************************************************************
+ * menu item (hw utils)
+ *********************************************************************************/
+/**
+ * 接続したPALのデータを保持する
+ */
+typedef struct {
+	uint8 u8EEPROMStatus;		// EEPROMのステータス
+	uint8 u8FormatVersion;		// データ書式のバージョン
+	uint8 u8PALModel;			// 接続したPALのモデル
+	uint8 u8PALVersion;			// 接続したPALの基板バージョン
+	uint32 u32SerialID;			// シリアルID
+	uint8 u8OptionLength;		// オプションの長さ
+	uint8 au8Option[64];		// オプション
+} tsPALData;
+
+void TWEINTCT_vSerUpdateScreen_hw(TWEINTRCT_tsContext *psIntr) {
+	TWEINTRCT_vSerHeadLine(psIntr, 0UL);
+	
+	Serial << crlf << "\033[7md\033[0m : DI status";
+	Serial << crlf << "\033[7mi\033[0m : probe i2c bus";
+	Serial << crlf << "\033[7mp\033[0m : PAL board EEPROM";
+	
+	Serial << crlf << crlf;
+	TWEINTRCT_vSerFootLine(psIntr, 0); // フッター行の表示
+}
+
+void TWEINTCT_vProcessInputByte_hw(TWEINTRCT_tsContext *psIntr, TWEINTRCT_tkeycode keycode) {
+	bool_t bHandled = FALSE;
+	bool_t bForceRedraw = FALSE;
+	TWE_APIRET ret = 0;
+
+	psIntr->u16HoldUpdateScreen = 0;
+
+	switch (keycode) {
+		case 'i': 
+			Serial << "\033[2J\033[HPROBING I2C BUS..." << mwx::crlf;
+			{
+				Wire.begin();	
+
+				int stat;
+				int ct = 0;
+				for (int i = 1; i < 127; i++) {
+					
+					Wire.beginTransmission(i);
+					stat = Wire.endTransmission();
+
+					delay(10);
+					
+					if (stat == 0) {
+						Serial << format("\033[7m[%02x]\033[0m", i, stat);
+						ct++;
+					}
+					else
+						Serial << format("[%02x]", i, stat);
+
+					if ((i & 15) == 0) Serial << crlf;
+				}
+				Serial << crlf << "found " << ct << " device(s)." << crlf;
+			}
+			bHandled = TRUE;			
+			break;
+		
+		case 'd':
+			Serial <<  "\033[2J\033[HDI STATUS..." << crlf;
+			{
+				uint32_t u32bm = digitalReadBitmap();
+				Serial << crlf << " 0 . . . . 5 . . . .10 . . . .15 . . . ." << crlf;
+				for (int i = 0; i < 20; i++) {
+					char_t c = (u32bm & (1UL << i)) ? 'H' : 'L';
+					Serial << ' ' << c;
+				}
+				Serial << crlf;
+			}
+			bHandled = TRUE;
+			break;
+
+		case 'p': // pal EEP
+			{	
+				bHandled = TRUE;
+			
+				Serial << crlf << "\033[2J\033[HPAL EEPROM...";
+				
+				const uint8_t DEV_ADDR = 0x56;
+				uint8_t u8StartAddr = 0x00;
+				uint8_t u8Status = 0;
+				uint8_t u8Data[64];
+				uint8_t* p;
+				uint8_t i = 0;
+
+				uint32_t u32MagicNumber;
+				tsPALData sPALData;
+
+				memset(u8Data, 0, sizeof(u8Data));
+
+				Wire.begin();
+
+				if (!Wire.probe(DEV_ADDR)) {
+					Serial << crlf << "<PAL EEPROM IS NOT FOUND>";
+					break;
+				}
+
+				if (auto&& wrt = Wire.get_writer(DEV_ADDR)) {
+					wrt(u8StartAddr);
+				}
+				if (auto&& rdr = Wire.get_reader(DEV_ADDR, sizeof(u8Data))) {
+					rdr >> u8Data;
+				}
+				
+				Serial << crlf;
+				for (int i = 0; i < sizeof(u8Data); i++) {
+					Serial << format("%02X ", u8Data[i]);
+					if (i != sizeof(u8Data) - 1 && (i & 0xF) == 0xF) Serial << crlf;
+				}
+				Serial << crlf;
+
+				auto&& np = expand_bytes(std::begin(u8Data), std::end(u8Data)
+					, u32MagicNumber
+					, sPALData.u8OptionLength
+					, sPALData.u8FormatVersion
+					);
+
+				if(u32MagicNumber != 0xA55A00FF) {
+					Serial << crlf << "<MAGIC NUMBER ERROR>";
+				}
+				
+				sPALData.u8OptionLength--;
+
+				// Serial << crlf << "OptionLength : " << int(sPALData.u8OptionLength);
+				Serial << crlf << "Format Version : " << int(sPALData.u8FormatVersion);
+
+				// for 0x01 format
+				uint16_t u16Reserved;
+				if (sPALData.u8FormatVersion == 0x01) {
+					np = expand_bytes(np, std::end(u8Data)
+						, sPALData.u8PALModel
+						, sPALData.u8PALVersion
+						, u16Reserved
+					);
+
+					Serial << crlf << format("PAL MODEL=%d VER=%d", sPALData.u8PALModel, sPALData.u8PALVersion);
+
+					sPALData.u8OptionLength -= 4; // reserve area
+					Serial << crlf << format("  Opt[%d]: ", sPALData.u8OptionLength);
+					for(int i = 0; i < sPALData.u8OptionLength; i++, np++) {
+						Serial << format("%02X ", *np);	
+					}
+
+					uint8_t u8EEPcrc = G_OCTET(np);
+					uint8_t u8crc = CRC8_u8Calc(u8Data+5, sPALData.u8OptionLength + 5);
+					if (u8crc != u8EEPcrc) {
+						Serial << crlf << format("  <CRC ERROR %02X:%02X>", u8EEPcrc, u8crc);
+					}
+				}
+			}
+			break;
+
+		default:
+			ret = TWEINTRCT_u32MenuOpKey(psIntr, keycode);
+			if (TWE_APIRET_IS_SUCCESS(ret)) {
+				bHandled = TRUE;
+				if (TWE_APIRET_VALUE(ret) == 1) {
+					bForceRedraw = TRUE;
+				}
+			}
+			break;
+	}
+
+	if (!bHandled || bForceRedraw) {
+		psIntr->u16HoldUpdateScreen = 5;
+	}
+}
+
+void TWEINTCT_vProcessInputString_hw(TWEINTRCT_tsContext *psIntr, TWEINPSTR_tsInpStr_Context *pContext) {
+}
+
+TWE_APIRET TWEINTCT_u32ProcessMenuEvent_hw(TWEINTRCT_tsContext *psIntr, uint32 u32Op, uint32 u32Arg1, uint32 u32Arg2, void *vpArg) {
+	TWE_APIRET ret = TWE_APIRET_FAIL;
+	return ret;
+}
 
 /*********************************************************************************
  * IMPL of StgsStandard
@@ -443,7 +633,10 @@ namespace mwx { inline namespace L1 {
 		//s_appLoadData(0x00, 0xFF, FALSE);
 
 		// Serial surrogate
-		Serial.register_surrogate((void*)&this->serial, _serial::_available, _serial::_read);
+		_ser_surr.pobj = (void*)&this->serial;
+		_ser_surr.pf_avail = _serial::_available;
+		_ser_surr.pf_read = _serial::_read;
+		Serial.register_surrogate(&_ser_surr);
 
 		// initialize the structure
 		_psIntr = TWEINTRCT_pscInit(
@@ -486,5 +679,13 @@ namespace mwx { inline namespace L1 {
 
 	void StgsStandard::set_appname(const char* appname) {
 		INTRCT_USER_APP_NAME = appname;
+	}
+
+	StgsStandard& StgsStandard::operator << (SETTINGS::open_at_start&& v) {
+		Serial << crlf << "!INF ENTERING CONFIG MODE...";
+		_psIntr->config.u8Mode = 1;
+		_psIntr->u16HoldUpdateScreen = 32; // refresh count (set 1 or above)
+		TWEINTRCT_vReConf(_psIntr); // apply optional settings
+		return *this;
 	}
 }}

@@ -8,8 +8,9 @@
 #include "mwx_debug.h"
 
 namespace mwx { inline namespace L1 {
-	bool sns_probe_true();
-	template <typename DT, void (INIT)(DT*, tsSnsObj*), void (FINAL)(DT*, tsSnsObj*), bool (PROBE)() = sns_probe_true>
+	bool sns_probe_true(uint32_t);
+
+	template <typename DT, void (INIT)(DT*, tsSnsObj*), void (FINAL)(DT*, tsSnsObj*), bool (PROBE)(uint32_t) = sns_probe_true>
     class sns_legacy : public sensor_crtp<sns_legacy<DT,INIT,FINAL,PROBE>> {
 		tsSnsObj _snsobj;
 		DT _data;
@@ -31,14 +32,17 @@ namespace mwx { inline namespace L1 {
 		}
 
     public:
-        bool probe() {
-			return PROBE();
+        MWX_APIRET probe() {
+			return PROBE(_snsobj.u32Opt);
         }
 
-        void setup(uint32_t arg1 = 0, uint32_t arg2 = 0) {
+        MWX_APIRET setup(uint32_t arg1 = 0, uint32_t arg2 = 0) { // so far arg2 is not used.
+			_snsobj.u32Opt = arg1; // store optional data (e.g. I2C addr, sensor param)
 			INIT(&_data, &_snsobj);
+
+			return _snsobj.u32Stat;
 			//MWX_DebugMsg(0, "{setup:%x}", _snsobj.pvData);
-			// _dump();
+			//_dump();
         }
 
         void begin(uint32_t arg1 = 0, uint32_t arg2 = 0) {
@@ -49,8 +53,9 @@ namespace mwx { inline namespace L1 {
 			//MWX_DebugMsg(0, "{begin:%x}", _snsobj.pvData);
         }
 
-        void process_ev(uint32_t arg1, uint32_t arg2 = 0) {
+        MWX_APIRET process_ev(uint32_t arg1, uint32_t arg2 = 0) {
 			_ev_process(&_snsobj, (teEvent)arg1);
+			return _snsobj.u32Stat;
 			//MWX_DebugMsg(0, "{process_ev:%x}", _snsobj.pvData);
         }
 
@@ -77,6 +82,9 @@ namespace mwx { inline namespace L1 {
     public:
 		DT* _get_data() { return &_data; }
 		tsSnsObj& _get_snsobj() { return _snsobj; }
+
+		uint32_t& sns_opt() { return _snsobj.u32Opt; }
+		uint32_t sns_stat() { return _snsobj.u32Stat; }
 
 		void _dump() {
 			uint8_t *p;
