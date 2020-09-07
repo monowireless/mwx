@@ -42,6 +42,8 @@ namespace mwx { inline namespace L1 {
 		uint8_t get_addr_src_lid() { return _addr_src_lid; }
 		void _set_addr_src_lid(uint8_t a) { _addr_src_lid = a; }
 
+		bool is_secure_pkt() { return _pRx->bSecurePkt; }
+
 	public:
 		uint8_t _get_network_type() { return _network_type; }
 

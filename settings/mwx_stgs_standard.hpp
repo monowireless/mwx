@@ -156,6 +156,8 @@ public:
 		uint32_t u32opt2() { return set.find_by_id(E_TWESTG_DEFSETS_OPT_DWORD1)->get_value()->uDatum.u32; }
 		uint32_t u32opt3() { return set.find_by_id(E_TWESTG_DEFSETS_OPT_DWORD2)->get_value()->uDatum.u32; }
 		uint32_t u32opt4() { return set.find_by_id(E_TWESTG_DEFSETS_OPT_DWORD3)->get_value()->uDatum.u32; }
+		uint8_t u8encmode() { return set.find_by_id(int(E_STGSTD_SETID::ENC_MODE))->get_value()->uDatum.u8; }
+		const uint8_t * u8enckeystr() { return set.find_by_id(int(E_STGSTD_SETID::ENC_KEY_STRING))->get_value()->uDatum.pu8; }
 
 	private:
 		void _reload(bool);
