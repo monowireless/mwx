@@ -73,5 +73,27 @@ namespace mwx { inline namespace L1 {
 		return (((bm & (1UL << head)) ? 1 : 0) << sizeof...(tail)) | collect_bits(bm, std::forward<Tail>(tail)...);
 	}
 
+	// for div10(),div100(),div1000()
+	struct div_result_i32 {
+		int32_t quo; // quotient
+		int32_t rem; // remainder
+		bool b_neg;  // true if negative
+	};
+
+	// div10
+	//   compute division and remains by 10 without performing / nor %.
+	// return: div_result_i32
+	div_result_i32 div10(int32_t val);
+
+	// div100 (val can be up to 999999=>9999.99)
+	//   compute division and remains by 100 without performing / nor %.
+	// return: div_result_i32
+	div_result_i32 div100(int32_t val);
+
+	// div1000 (val can be up to 9999999>9999.999)
+	//   compute division and remains by 1000 without performing / nor %.
+	// return: div_result_i32
+	div_result_i32 div1000(int32_t val);
+
 }} // TWEUTILS
 
