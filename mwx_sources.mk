@@ -1,4 +1,5 @@
 APPSRC_CXX+=mwx_utils_crc8.cpp
+APPSRC_CXX+=mwx_utils.cpp
 APPSRC_CXX+=mwx_appcore.cpp
 APPSRC_CXX+=mwx_memory.cpp
 APPSRC_CXX+=mwx_periph.cpp
