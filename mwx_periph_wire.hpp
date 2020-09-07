@@ -14,12 +14,9 @@
 #include <jendefs.h>
 #include <AppHardwareApi.h>
 
+#include "mwx_appcore.hpp"
 #include "mwx_stream.hpp"
 #include "mwx_debug.h"
-
-#ifndef MWX_TWOWIRE_RCVBUFF
-#define MWX_TWOWIRE_RCVBUFF 32
-#endif
 
 namespace mwx { inline namespace L1 {
 	namespace WIRE_CONF {
@@ -39,7 +36,7 @@ namespace mwx { inline namespace L1 {
 		const uint8_t WIRE_PORT_INIT_MASK = 0x80;
 	}
 
-	template <int SIZ = MWX_TWOWIRE_RCVBUFF>
+	template <int SIZ = MWX_TWOWIRE_BUFF>
 	class periph_twowire {
 		static const int DLVL = 99;
 		friend class reader;
