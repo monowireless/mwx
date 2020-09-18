@@ -1,0 +1,4 @@
+#pragma once
+
+#include "sensors/mwx_sns_PCA9632.hpp"
+using SNS_PCA9632 = mwx::SnsPCA9632;

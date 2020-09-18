@@ -95,5 +95,57 @@ namespace mwx { inline namespace L1 {
 	// return: div_result_i32
 	div_result_i32 div1000(int32_t val);
 
+	/**
+	 * @brief scale 0..1000 to 0..127
+	 * 
+	 * @param x original value 0..1000, if computed value > 127, returns 127
+	 * @return uint8_t scaled value 0..127
+	 */
+	static inline uint8_t scale_1000_to_127u8(uint16_t x) { return x > 1000 ? 127 : (16646*x+65000) >> 17; } // approx. (127*x/1000)
+
+	/**
+	 * @brief scale 0..127 to 0.1000
+	 * 
+	 * @param x original value (0..127)
+	 * @return uint16_t scaled value 0..1000
+	 */
+	static inline uint16_t scale_127u8_to_1000(uint8_t x) {
+		uint16_t y = (2064000UL*uint32_t(x)+131072)>>18; return y > 1000 ? 1000 : y; }
+
+	/**
+	 * @brief scale 0..1000 to 0..255
+	 * 
+	 * @param x original value 0..1000, if computed value > 127, returns 255
+	 * @return uint8_t scaled value 0..255
+	 */
+	static inline uint8_t scale_1000_to_255u8(uint16_t x) { return x > 1000 ? 255 : (33423*x+65000) >> 17; } // approx. (255*x/1000)
+
+	/**
+	 * @brief scale 0..255 to 0..1000
+	 * 
+	 * @param x original value (0..255)
+	 * @return uint16_t scaled value (0..1000)
+	 */
+	static inline uint16_t scale_255u8_to_1000(uint8_t x) {
+		uint16_t y = (1028000UL*uint32_t(x)+131072)>>18; return y > 1000 ? 1000 : y; }
+
+	/**
+	 * @brief scale 0..1000 to 0..256
+	 *        note: 256 cannot be returned, but 255.
+	 * 
+	 * @param x original value 0..1000, if computed value > 255, returns 255
+	 * @return uint8_t scaled value 0..255
+	 */
+	static inline uint8_t scale_1000_to_256u8(uint16_t x) { return x > 995 ? 255 : (33554*x+66000) >> 17; } // approx. (256*x/1000)
+	
+	/**
+	 * @brief scale 0..256 to 0..1000
+	 * 
+	 * @param x original value (0..256)
+	 * @return uint16_t scaled value 0..1000
+	 */
+	static inline uint16_t scale_256u16_to_1000(uint16_t x) {
+		uint16_t y = (1024000UL*uint32_t(x)+131072)>>18; return y > 1000 ? 1000 : y; }
+
 }} // TWEUTILS
 
