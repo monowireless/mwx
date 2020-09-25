@@ -7,48 +7,41 @@
 #include <cstdint>
 #include <functional>
 #include <initializer_list>
-#include <tuple>
+#include <utility>
 
-// #include "twecommon.h"
 #include "mwx_common.hpp"
 #include "mwx_utils_alloc.hpp"
 #include "mwx_stream.hpp"
 
 namespace mwx { inline namespace L1 {
+
 	/**
-	 * @class	smplbuf
-	 *
-	 * @brief	簡易バッファ
-	 * 			
-	 * 			- このクラス自体はメモリの確保をせず、あらかじめ確保済みのメモリ領域を配列としてアクセスする  
-	 * 			  ための手続きを提供する。
-	 * 			- 確保された最大長の範囲で可変長のバッファとしてふるまう。redim() により利用範囲を変更する。
-	 *
-	 * @tparam	T	Generic type parameter.
-	 * @tparam	N	Type of the n.
+	 * @brief simple array class (mainly for byte array, uint8_t)
+	 * 
+	 * @tparam T entry type
+	 * @tparam AL memory allocator class
 	 */
-	template <class T, class alloc = mwx::alloc_attach<T>>
-	class smplbuf : public alloc, public mwx::stream<smplbuf<T,alloc>>
+	template <class T, class AL>
+	class _smplbuf : public AL
 	{
 	public:
-		typedef smplbuf self_type;
+		typedef _smplbuf self_type;
 
 		typedef T value_type;
 		typedef T* iterator;
 		typedef const T* const_iterator;
-		
-		using SUPER_STREAM = mwx::stream<smplbuf<T,alloc>>;
-		
+
 	private:
 		uint16_t _u16len;
 
-		/// <summary>
-		/// initializer list からのコピー
-		/// </summary>
-		/// <param name="list"></param>
+		/**
+		 * @brief copy for initializer `list'
+		 * 
+		 * @param list 
+		 */
 		inline void copy_from_initializer_list(std::initializer_list<T>& list) {
 			_u16len = (uint16)list.size();
-			if (_u16len > alloc::super::_size) _u16len = alloc::super::_size;
+			if (_u16len > AL::super::_size) _u16len = AL::super::_size;
 
 			auto p = list.begin();
 			auto q = this->begin();
@@ -58,130 +51,161 @@ namespace mwx { inline namespace L1 {
 		}
 
 	public:
-		/// <summary>
-		/// コンストラクタ
-		/// </summary>
-		smplbuf() : _u16len(0) {
-			SUPER_STREAM::pvOutputContext = (void*)this;
-		}
+		/**
+		 * @brief Construct a new smplbuf object
+		 * 
+		 */
+		_smplbuf() : _u16len(0) {}
 
-		smplbuf(std::initializer_list<T>&& list) : _u16len(0)  {
-			alloc::_is_local();
+		/**
+		 * @brief Construct a new smplbuf object (alloc_local)
+		 * 
+		 * @param list the initializer list (e.g. {1,1,2})
+		 */
+		_smplbuf(std::initializer_list<T>&& list) : _u16len(0)  {
+			AL::_is_local();
 			init_local();
 
-			if (alloc::super::_p != nullptr) {
+			if (AL::super::_p != nullptr) {
 				copy_from_initializer_list(list);
 			}
 		}
 
 		/**
-		 * @fn	smplbuf::smplbuf(T* p, uint16_t u16len, uint16_t u16maxlen)
-		 *
-		 * @brief	コンストラクタ、パラメータ全部渡し
-		 *
-		 * @param [in,out]	p		 	.
-		 * @param 		  	u16len   	.
-		 * @param 		  	u16maxlen	.
+		 * @brief Construct a new smplbuf object (alloc attach)
+		 * 
+		 * @param p pointer to an existing buffer
+		 * @param u16len  initial effective length in buffer
+		 * @param u16maxlen  max buffer length
 		 */
-		smplbuf(T* p, uint16_t u16len, uint16_t u16maxlen) {
+		_smplbuf(T* p, uint16_t u16len, uint16_t u16maxlen) {
 			attach(p, u16len, u16maxlen);
 		}
 
-
+		/**
+		 * @brief init for alloc_attach<>
+		 * 
+		 * @param p pointer to an existing buffer
+		 * @param l initial effective length in buffer
+		 * @param lm max buffer length
+		 */
 		inline void attach(T* p, uint16_t l, uint16_t lm) {
-			alloc::_is_attach();
-			alloc::attach(p, lm);
+			AL::_is_attach();
+			AL::attach(p, lm);
 			_u16len = l;
-			SUPER_STREAM::pvOutputContext = (void*)this;
 		}
 
+		/**
+		 * @brief init for alloc_local.
+		 * 
+		 */
 		inline void init_local() {
-			alloc::_is_local();
-			alloc::init_local();
+			AL::_is_local();
+			AL::init_local();
 			_u16len = 0;
-			SUPER_STREAM::pvOutputContext = (void*)this;
 		}
 		
+		/**
+		 * @brief init for alloc_heap
+		 * 
+		 * @param n 
+		 */
 		inline void init_heap(uint16_t n) {
-			alloc::_is_heap();
-			alloc::init_heap(n);
+			AL::_is_heap();
+			AL::init_heap(n);
 			_u16len = 0;
-			SUPER_STREAM::pvOutputContext = (void*)this;
 		}
 
 		/**
 		 * @fn	smplbuf::~smplbuf()
 		 *
-		 * @brief	デストラクタ
+		 * @brief destructor
 		 *
 		 */
-		~smplbuf() {}
+		~_smplbuf() {}
 
 		/**
-		 * @fn	smplbuf::smplbuf(const smplbuf& ref)
-		 *
-		 * @brief	コピーコンストラクタ
-		 * 			クラス内にメモリを確保する場合はコピー禁止とする。
-		 *
-		 * @param	ref	.
+		 * @brief Construct a new smplbuf object (for alloc_attach)
+		 * 
+		 * @param ref 
 		 */
-		smplbuf(const self_type& ref) {
-			alloc::_is_attach(); // validate if attaching allocator.
-			SUPER_STREAM::pvOutputContext = (void*)this;
+		_smplbuf(const self_type& ref) {
+			AL::_is_attach(); // validate if attaching allocator.
 
-			alloc::super::_p = ref._p;
-			alloc::super::_size = ref.capacity();
+			AL::super::_p = ref._p;
+			AL::super::_size = ref.capacity();
 			_u16len = ref._u16len;
 		}
 
 		/**
 		 * @fn	smplbuf& smplbuf::operator= (const smplbuf& ref)
 		 *
-		 * @brief	代入演算子
+		 * @brief	assign with same class object. (for alloc_attach)
 		 *
 		 * @param	ref	.
 		 *
 		 * @returns	A shallow copy of this object.
 		 */
-		smplbuf& operator = (const self_type& ref) {
-			alloc::_is_attach(); // validate if attaching allocator.
-			SUPER_STREAM::pvOutputContext = (void*)this;
+		_smplbuf& operator = (const self_type& ref) {
+			AL::_is_attach(); // validate if attaching allocator.
 
 			_u16len = ref._u16len;
-			alloc::super::_p = ref._p;
-			alloc::super::_size = ref.capacity();
+			AL::super::_p = ref._p;
+			AL::super::_size = ref.capacity();
 			return (*this);
 		}
 
-		smplbuf& operator = (std::initializer_list<T>&& list) {
-			if (alloc::super::_p != nullptr) {
+		/**
+		 * @brief assing with initializer list (e.g. {0,1,2})
+		 * 
+		 * @param list the list
+		 * @return _smplbuf& 
+		 */
+		_smplbuf& operator = (std::initializer_list<T>&& list) {
+			if (AL::super::_p != nullptr) {
 				copy_from_initializer_list(list);
 			}
 			return (*this);
 		}
 
-		/// <summary>
-		/// 先頭
-		/// </summary>
-		/// <returns></returns>
-		inline T* begin() { return alloc::super::_p; }
-		inline const T* cbegin() const { return alloc::super::_p; }
+		/**
+		 * @brief get begin iterator
+		 * 
+		 * @return T* begin iterator (ptr)
+		 */
+		inline T* begin() { return AL::super::_p; }
 
-		/// <summary>
-		/// 終端（実データ）
-		/// </summary>
-		/// <returns></returns>
-		inline T* end() { return alloc::super::_p + _u16len; }
-		inline const T* cend() const { return alloc::super::_p + _u16len; }
+		/**
+		 * @brief get begin iterator
+		 * 
+		 * @return T* begin iterator (ptr)
+		 */
+		inline const T* cbegin() const { return AL::super::_p; }
 
-		/// <summary>
-		/// １バイト追加
-		/// </summary>
-		/// <param name="c"></param>
-		/// <returns></returns>
+		/**
+		 * @brief get end iterator
+		 * 
+		 * @return T* end iterator (ptr)
+		 */
+		inline T* end() { return AL::super::_p + _u16len; }
+
+		/**
+		 * @brief get end iterator
+		 * 
+		 * @return T* end iterator (ptr)
+		 */
+		inline const T* cend() const { return AL::super::_p + _u16len; }
+
+		/**
+		 * @brief append one entry at the end of buffer
+		 * 
+		 * @param c entry to add
+		 * @return true success
+		 * @return false buffer full 
+		 */
 		inline bool append(T&& c) {
-			if (_u16len < alloc::super::_size) {
-				alloc::super::_p[_u16len++] = c;
+			if (_u16len < AL::super::_size) {
+				AL::super::_p[_u16len++] = std::move(c);
 				return true;
 			}
 			else {
@@ -189,9 +213,16 @@ namespace mwx { inline namespace L1 {
 			}
 		}
 
+		/**
+		 * @brief append one entry at the end of buffer
+		 * 
+		 * @param c entry to add
+		 * @return true success
+		 * @return false buffer full 
+		 */
 		inline bool append(const T& c) {
-			if (_u16len < alloc::super::_size) {
-				alloc::super::_p[_u16len++] = c;
+			if (_u16len < AL::super::_size) {
+				AL::super::_p[_u16len++] = c;
 				return true;
 			}
 			else {
@@ -199,52 +230,76 @@ namespace mwx { inline namespace L1 {
 			}
 		}
 
+		/**
+		 * @brief append one entry at the end of buffer.
+		 * @param c entry to add
+		 */
 		inline void push_back(T&& c) {
-			if (_u16len < alloc::super::_size) {
-				alloc::super::_p[_u16len++] = c;
+			if (_u16len < AL::super::_size) {
+				AL::super::_p[_u16len++] = std::move(c);
 			}
 		}
 
+		/**
+		 * @brief append one entry at the end of buffer.
+		 * @param c 
+		 */
 		inline void push_back(const T& c) {
-			if (_u16len < alloc::super::_size) {
-				alloc::super::_p[_u16len++] = c;
+			if (_u16len < AL::super::_size) {
+				AL::super::_p[_u16len++] = c;
 			}
 		}
 
+		/**
+		 * @brief remove the last entry
+		 * 
+		 */
 		inline void pop_back() {
 			if (_u16len > 0) {
-				alloc::super::_p[_u16len - 1] = T{};
+				AL::super::_p[_u16len - 1] = T{};
 				_u16len--;
 			}
 		}
 
+		/**
+		 * @brief check if buffer has no entry.
+		 * 
+		 * @return true no entry
+		 * @return false has entry(ies).
+		 */
 		inline bool empty() const {
 			return (_u16len == 0);
 		}
 
-		/// <summary>
-		/// 配列の有効データ長
-		/// </summary>
-		/// <returns></returns>
+		/**
+		 * @brief report entry count
+		 * 
+		 * @return uint16_t entry count
+		 */
 		inline uint16_t size() const { return _u16len; }
 
-		/// <summary>
-		/// 配列の最大バッファサイズ
-		/// </summary>
-		/// <returns></returns>
-		inline uint16_t capacity() const { return alloc::super::_size; } 
+		/**
+		 * @brief report max buffer size
+		 * 
+		 * @return uint16_t max buffer size
+		 */
+		inline uint16_t capacity() const { return AL::super::_size; } 
 
-		/// <summary>
-		/// 使用区画のサイズを変更する
-		/// </summary>
-		/// <param name="len">新しいサイズ</param>
-		/// <returns></returns>
+		/**
+		 * @brief reserve buffer with given 'len'
+		 *        - keep the existing buffer area within 'len'
+		 *        - if `len' excesses an existing area, the extended area is filled with blank.
+		 * 
+		 * @param len length to reserve.
+		 * @return true success
+		 * @return false not enough buffer size.
+		 */
 		inline bool reserve(uint16_t len) {
-			if (len < alloc::super::_size) {
+			if (len < AL::super::_size) {
 				if (len >= _u16len) {
-					// 後ろをクリア
-					T* p = alloc::super::_p + _u16len;
-					T* e = alloc::super::_p + len;
+					// clear the extended area
+					T* p = AL::super::_p + _u16len;
+					T* e = AL::super::_p + len;
 					while (p < e) {
 						(*p) = T{};
 						++p;
@@ -258,70 +313,252 @@ namespace mwx { inline namespace L1 {
 			}
 		}
 
-		/// <summary>
-		/// 使用区画の先頭部分を予約する
-		/// </summary>
-		/// <param name="len">予約サイズ</param>
-		/// <returns></returns>
-		inline void reserve_head(int len) {
-			if (len > 0) {
-				alloc::super::_p += len;
-				_u16len = 0;
-				alloc::super::_size -= len;
-			}
-			else {
-				alloc::super::_p += len;
-				_u16len += -len;
-				alloc::super::_size += -len;
-			}
-		}
-
-		// バッファ領域をクリアせずにサイズを変更する
+		/**
+		 * @brief extend/shrink buffer without clearing memory region.
+		 * 
+		 * @param len new buffer size.
+		 */
 		inline void redim(uint16_t len) {
-			if (len <= alloc::super::_size) {
+			if (len <= AL::super::_size) {
 				_u16len = len;
 			}
 		}
 
-		/// <summary>
-		/// 終端に来た場合（これ以上追加できない）
-		/// </summary>
-		/// <returns></returns>
+		/**
+		 * @brief reserve head of buffer by `len'.
+		 *        - once reserved, this buffer behaves sub-buffer skipping head area.
+		 *        - to recover whole buffer, call .reserve_head(-len).
+		 *        note: this operation is NOT safe (e.g. it may destry memory area if calling twice.)
+		 * 
+		 * @param len 
+		 */
+		inline void reserve_head(int len) {
+			if (len > 0) {
+				AL::super::_p += len;
+				_u16len = 0;
+				AL::super::_size -= len;
+			}
+			else {
+				AL::super::_p += len;
+				_u16len += -len;
+				AL::super::_size += -len;
+			}
+		}
+
+		/**
+		 * @brief check if it's buffer end or not.
+		 * 
+		 * @return true filled whole buffer area.
+		 * @return false has more space.
+		 */
 		inline bool is_end() const {
-			return (_u16len >= alloc::super::_size) ? true : false;
+			return (_u16len >= AL::super::_size) ? true : false;
 		}
 
-		/// <summary>
-		/// []演算子、インデックスの範囲外チェックはしない。
-		///  - (-1)をインデックスに与えると配列の末尾を示す
-		/// </summary>
-		/// <param name="i"></param>
-		/// <returns></returns>
-		inline T& operator [] (int i) { return (i < 0) ? alloc::super::_p[_u16len + i] : alloc::super::_p[i]; }
-		inline T operator [] (int i) const { return (i < 0) ? alloc::super::_p[_u16len + i] : alloc::super::_p[i]; }
+		/**
+		 * @brief access an entry by index
+		 *        - giving -1 will return the last entryh
+		 *        - note: no range check.
+		 * 
+		 * @param i index
+		 * @return T& an entry
+		 */
+		inline T& operator [] (int i) { return (i < 0) ? AL::super::_p[_u16len + i] : AL::super::_p[i]; }
+		
+		/**
+		 * @brief access an entry by index (const)
+		 *        - giving -1 will return the last entryh
+		 *        - no range check.
+		 * 
+		 * @param i index
+		 * @return T& an entry
+		 */
+		inline T operator [] (int i) const { return (i < 0) ? AL::super::_p[_u16len + i] : AL::super::_p[i]; }
 
-		/// <summary>
-		/// 代入演算子(自身の配列の利用長を０に戻す）
-		///   redim() にて = 0 にて型 T を初期化している。SmplBuf<T> の場合でも、
-		///   このクラスを利用できるようにするための、初期化演算子として利用。
-		/// </summary>
-		inline self_type& operator = (int i) { _u16len = 0; return *this; }
-
-		// implement stream interfaces
-		inline int available() { return 0; }
-		inline void flush(void) {
-			// set terminator char (note: do not append)
-			if (_u16len < alloc::super::_size)
-				alloc::super::_p[_u16len] = 0;
-			else
-				alloc::super::_p[alloc::super::_size - 1] = 0;
+		/**
+		 * @fn	inline std::pair<T*, T*> smplbuf::to_stream()
+		 *
+		 * @brief	pair of begin() and end() pointers to output bytes via mwx::stream
+		 *
+		 * @returns	This object as a std::tuple&lt;T*,T*&gt;
+		 */
+		inline std::pair<T*, T*> to_stream() {
+			static_assert(sizeof(T) == 1, "smplbuf::to_stream() does not support types other than bytetype(char,uint8_t,..).");
+			return std::make_pair(this->begin(), this->end());
 		}
-		inline int read() { return -1; }
+
+		/**
+		 * @brief helper class with mwx::stream interface.
+		 *          smplbuf_u8<128> buff;
+		 *          auto&& bs = buff.get_stream_helper();
+		 *          bs << format("hello world %d", 123);
+		 * 			Serial << buff;
+		 * 
+		 *        note: do not implement mwx::smpl_buf methods.
+		 * 
+		 */
+		class _smplbuf_strm_hlpr : public mwx::stream<_smplbuf_strm_hlpr> {
+			using SUPER_STREAM = mwx::stream<_smplbuf_strm_hlpr>;
+			using self_type = _smplbuf_strm_hlpr;
+
+			_smplbuf* _ref;
+			uint16_t _idx_read;
+
+			/**
+			 * @brief Set the this object pointer to stream class.
+			 *        (note: this is used for calling printf_ library in C)
+			 */
+			inline void set_obj() {
+				SUPER_STREAM::set_pvOutputContext(static_cast<self_type*>(this));
+			}
+
+		public: // override constructors/assignment operators/initialization methods.
+			_smplbuf_strm_hlpr(_smplbuf& ref) : _ref(&ref), _idx_read(0) {
+				set_obj();
+			}
+
+		public: // implement stream interfacee
+		
+			/**
+			 * @brief rewind the read index to the head.
+			 * 
+			 */
+			inline void rewind() {
+				_idx_read = 0;
+			}
+
+			/**
+			 * @brief check if there is remaining buffer to read.
+			 * 
+			 * @return int 0:no data 1:there is data to read
+			 */
+			inline int available() {
+				return (_idx_read < _ref->size());
+			}
+
+			/**
+			 * @brief read a byte from buffer.
+			 * 
+			 * @return int -1:error or read byte
+			 */
+			inline int read() { 
+				return available() ? (*_ref)[_idx_read++] : -1;
+			}
+
+			inline void flush(void) { } // do nothing
+
+			/**
+			 * @brief append one entry
+			 * 
+			 * @param n 
+			 * @return size_t 
+			 */
+			inline size_t write(int n) {
+				// append a byte
+				bool ret = _ref->append(T(n));
+				return ret ? 1 : 0;
+			}
+
+			/**
+			 * @brief output function for printf_ library.
+			 * 
+			 * @param out 
+			 * @param vp 
+			 */
+			inline static void vOutput(char out, void* vp) {
+				// append a byte
+				if (vp != nullptr) {
+					auto thisobj = reinterpret_cast<self_type*>(vp);
+					thisobj->write(T(out));
+				}
+			}
+
+			/**
+			 * @fn	inline std::pair<T*, T*> smplbuf::to_stream()
+			 *
+			 * @brief	pair of begin() and end() pointers to output bytes via mwx::stream
+			 *
+			 * @returns	This object as a std::tuple&lt;T*,T*&gt;
+			 */
+			inline std::pair<T*, T*> to_stream() {
+				static_assert(sizeof(T) == 1, "smplbuf::to_stream() does not support types other than bytetype(char,uint8_t,..).");
+				return std::make_pair(_ref->begin(), _ref->end());
+			}
+		};
+
+		/**
+		 * @brief	generate helper class with stream interface.
+		 */
+		_smplbuf_strm_hlpr get_stream_helper() {
+			return std::move(_smplbuf_strm_hlpr(*this));
+		}
+
+	};
+
+	/**
+	 * @brief simple array class with stream interface.
+	 * 
+	 * @tparam T an entry (note: this class assumes uint8_t)
+	 * @tparam AL memory allocator
+	 */
+	template <typename T, class AL>
+	class _smplbuf_stream : public _smplbuf<T, AL>, public mwx::stream<_smplbuf_stream<T, AL>> {
+		using SUPER_SMPLBUF = _smplbuf<T, AL>;
+		using SUPER_STREAM = mwx::stream<_smplbuf_stream<T, AL>>;
+		using self_type = _smplbuf_stream;
+
+		/**
+		 * @brief Set the this object pointer to stream class.
+		 *        (note: this is used for calling printf_ library in C)
+		 */
+		inline void set_obj() {
+			SUPER_STREAM::set_pvOutputContext(static_cast<self_type*>(this));
+		}
+
+	public: // override constructors/assignment operators/initialization methods.
+		_smplbuf_stream() : SUPER_SMPLBUF() {
+			set_obj();
+		}
+
+		_smplbuf_stream(const SUPER_SMPLBUF& ref) : SUPER_SMPLBUF::_smplbuf_stream(ref) {
+			set_obj();
+		}
+
+		_smplbuf_stream& operator = (const SUPER_SMPLBUF& ref) {
+			SUPER_SMPLBUF::operator = (ref);
+			set_obj();
+
+			return *this;
+		}
+
+		inline void attach(T* p, uint16_t l, uint16_t lm) {
+			SUPER_SMPLBUF::attach(p, l, lm);
+			set_obj();
+		}
+
+		inline void init_local() {
+			SUPER_SMPLBUF::init_local();
+			set_obj();
+		}
+
+		inline void init_heap(uint16_t n) {
+			SUPER_SMPLBUF::init_heap(n);
+			set_obj();
+		}
+
+	public: // implement stream interfacee
+		inline int available() { return 0; } // always false (read() is not implemented)
+		inline int read() { return -1; } // not implemented
+		inline void flush(void) {} // do nothing
+
+		// append one entry
 		inline size_t write(int n) {
 			// append a byte
-			bool ret = append((T)n);
+			bool ret = SUPER_SMPLBUF::append((T)n);
 			return ret ? 1 : 0;
 		}
+
+		// output function for printf_ library.
 		inline static void vOutput(char out, void* vp) {
 			// append a byte
 			if (vp != nullptr) {
@@ -331,21 +568,29 @@ namespace mwx { inline namespace L1 {
 		}
 
 		/**
-		 * @fn	inline std::tuple<T*, T*> smplbuf::to_stream()
+		 * @fn	inline std::pair<T*, T*> smplbuf::to_stream()
 		 *
-		 * @brief	mwx::stream クラスへ出力するために begin(), end() のペアを返す。
+		 * @brief	pair of begin() and end() pointers to output bytes via mwx::stream
 		 *
 		 * @returns	This object as a std::tuple&lt;T*,T*&gt;
 		 */
 		inline std::pair<T*, T*> to_stream() {
 			static_assert(sizeof(T) == 1, "smplbuf::to_stream() does not support types other than bytetype(char,uint8_t,..).");
-			return std::make_pair(begin(), end());
+			return std::make_pair(SUPER_SMPLBUF::begin(), SUPER_SMPLBUF::end());
 		}
 	};
 
+	// alias _smplbuf to smplbuf
+	template <typename T, class AL = mwx::alloc_attach<T>>
+	using smplbuf = mwx::_smplbuf<T, AL>;
+
 	using smplbuf_u8_attach = mwx::smplbuf<uint8_t, mwx::alloc_attach<uint8_t>>;
 	template <int N> using smplbuf_u8 =  mwx::smplbuf<uint8_t, mwx::alloc_local<uint8_t, N>>;
-	using smplbuf_u8_heap = mwx::smplbuf<mwx::alloc_heap<uint8_t>>;
+	using smplbuf_u8_heap = mwx::smplbuf<uint8_t, mwx::alloc_heap<uint8_t>>;
+
+	using smplbuf_strm_u8_attach = mwx::_smplbuf_stream<uint8_t, mwx::alloc_attach<uint8_t>>;
+	template <int N> using smplbuf_strm_u8 = _smplbuf_stream<uint8_t, mwx::alloc_local<uint8_t, N>>;
+	using smplbuf_strm_u8_heap = mwx::_smplbuf_stream<uint8_t, mwx::alloc_heap<uint8_t>>;
 
 	template <typename T, int N>
 	using smplbuf_local =  mwx::smplbuf<T, mwx::alloc_local<T, N>>;
@@ -354,5 +599,65 @@ namespace mwx { inline namespace L1 {
 	template <typename T>
 	using smplbuf_heap =  mwx::smplbuf<T, mwx::alloc_heap<T>>;
 
+	/**
+	 * @brief Output bytes from RHS object of smplbuf_stream<uint8_t> with stream interface into LHS object of mwx::stream<uint8_t>.
+	 * 
+	 * @tparam L_STRM 
+	 * @tparam ALC 
+	 * @param lhs 
+	 * @param rhs 
+	 * @return mwx::stream<L_STRM>& 
+	 */
+	template <class L_STRM, class AL>
+	mwx::stream<L_STRM>& operator << (mwx::stream<L_STRM>& lhs, mwx::_smplbuf_stream<uint8_t, AL>& rhs) {
+		lhs << rhs.to_stream();
+		return lhs;
+	}
 
+	/**
+	 * @brief Output bytes from LHS object of smplbuf<uint8_t> into RHS object of mwx::stream<uint8_t>.
+	 * 
+	 * @tparam L_STRM 
+	 * @tparam ALC 
+	 * @param lhs 
+	 * @param rhs 
+	 * @return mwx::stream<L_STRM>& 
+	 */
+	template <class L_STRM, class AL>
+	mwx::stream<L_STRM>& operator << (mwx::stream<L_STRM>& lhs, mwx::_smplbuf<uint8_t, AL>& rhs) {
+		for (uint8_t x : rhs) lhs << uint8_t(x);
+		return lhs;
+	}
+
+	/**
+	 * @brief Put RHS content of smplbuf_stream<uint8_t> into LHS content of smplbuf_stream<uint8_t>.
+	 * 
+	 * @tparam L_ALC 
+	 * @tparam R_ALC 
+	 * @param lhs 
+	 * @param rhs 
+	 * @return mwx::_smplbuf_stream<uint8_t, L_ALC>& 
+	 */
+	template <class L_AL, class R_AL>
+	mwx::_smplbuf_stream<uint8_t, L_AL>& operator << (mwx::_smplbuf_stream<uint8_t, L_AL>& lhs, mwx::_smplbuf_stream<uint8_t, R_AL>& rhs) {
+		for (uint8_t x : rhs) lhs.push_back(x);
+		return lhs;
+	}
+
+	/**
+	 * @brief Put RHS content of smplbuf<uint8_t> into LHS content of smplbuf_stream<uint8_t>. 
+	 * 
+	 * @tparam L_ALC 
+	 * @tparam R_ALC 
+	 * @param lhs 
+	 * @param rhs 
+	 * @return mwx::_smplbuf_stream<uint8_t, L_ALC>& 
+	 */
+	template <class L_AL, class R_AL>
+	mwx::_smplbuf_stream<uint8_t, L_AL>& operator << (mwx::_smplbuf_stream<uint8_t, L_AL>& lhs, mwx::_smplbuf<uint8_t, R_AL>& rhs) {
+		for (uint8_t x : rhs) lhs.push_back(x);
+		return lhs;
+	}
+
+	
 }} // TWEUTILS
