@@ -329,6 +329,14 @@ namespace mwx { inline namespace L1 {
 			return ToCoNet_u16RcCalib(0xFFFF);
 		}
 
+		// watch dog
+		inline void stop_watchdog() {
+			vAHI_WatchdogStop();
+		}
+		inline void restart_watchdog() {
+			vAHI_WatchdogRestart();
+		}
+
 		// debug
 		inline void debug_level(uint8_t u8lvl) {
 			ToCoNet_vDebugInit(&_sSerLegacy);
