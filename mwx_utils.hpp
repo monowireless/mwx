@@ -7,6 +7,7 @@
 #include <utility>
 #include "mwx_common.hpp"
 #include "mwx_utils_crc8.hpp"
+#include "tweprintf.h"
 
 namespace mwx { inline namespace L1 {
 	// read uint8_t, uint16_t, uint32_t as bigendian from specified pointer `p' and increment pointer.
@@ -73,26 +74,140 @@ namespace mwx { inline namespace L1 {
 		return (((bm & (1UL << head)) ? 1 : 0) << sizeof...(tail)) | collect_bits(bm, std::forward<Tail>(tail)...);
 	}
 
-	// for div10(),div100(),div1000()
-	struct div_result_i32 {
-		int32_t quo; // quotient
-		int32_t rem; // remainder
-		bool b_neg;  // true if negative
+	/**
+	 * @brief parameter defs for for div_result_i32::format()
+	 */
+	struct DIVFMT {
+		static const int STD = 0; // displays with minimul digits (no padding, no positive sign)
+		static const int PAD_ZERO = 1; // set padding character as '0' instead of ' '.
+		static const int SIGN_PLUS = 2; // put '+' sign if value is positive or 0.
+		static const int PAD_ZERO_SIGN_PLUS = 3; // PAD_ZERO & SIGN_PLUS
+		static const int SIGN_SPACE = 4; // put ' ' sign if value is positive or 0.
+		static const int PAD_ZERO_SIGN_SPACE = 5; // PAD_ZERO & SIGN_SPACE
 	};
 
-	// div10
-	//   compute division and remains by 10 without performing / nor %.
-	// return: div_result_i32
+	/**
+	 * @brief helper class for div_result_i32::format()
+	 *        - keep char[] buffer for output
+	 *        - interface to report text pointer.
+	 */
+	class _div_chars {
+		static const int MAXBUFF=15;
+		char _buff[MAXBUFF + 1];
+		
+		/**
+		 * @brief index counter.
+		 */
+		char& _idx() {
+			return _buff[MAXBUFF];
+		}
+
+		/**
+		 * @brief index counter (const reference)
+		 */
+		char _idx() const {
+			return _buff[MAXBUFF];
+		}
+
+	public:
+		/**
+		 * @brief Construct a new div chars object
+		 */
+		_div_chars() {
+			// set buffer ends as NUL char.
+			_buff[MAXBUFF-1] = 0;
+
+			// set index counter pointing NUL char.
+			_idx() = MAXBUFF-1;
+		}
+
+		/**
+		 * @brief push one char at the head of buffer.
+		 * 		  note: if `_idx()' reaches buffer head, ignore request.
+		 * 
+		 * @param c 
+		 */
+		void push_front(char c) {
+			if (_idx() > 0) { --_idx(); _buff[_idx()] = c; }
+		}
+
+		/**
+		 * @brief begin() iterator.
+		 * 
+		 * @return const char* 
+		 */
+		const char* begin() const { return &_buff[_idx()]; }
+		
+		/**
+		 * @brief end() iterator.
+		 * 
+		 * @return const char* 
+		 */
+		const char* end() const { return &_buff[MAXBUFF-1]; }
+
+		/**
+		 * @brief exporting text buffer pointer as (const char*)
+		 * 
+		 * @return const char* 
+		 */
+		const char* c_str() const { return begin(); }
+		
+		/**
+		 * @brief exporting text buffer pointer as (const char*)
+		 * 
+		 * @return const char* 
+		 */
+		operator const char*() const { return begin(); }
+	};
+
+	/**
+	 * @brief store result of divide functions (div10(),div100(),div1000())
+	 */
+	struct div_result_i32 {
+	private:
+		static const int ZERO_PAD = 0x01; 
+		static const int SIGN_PLUS = 0x02;
+		static const int SIGN_SPACE = 0x04;
+
+	public:
+		int32_t quo; // quotient
+		int16_t rem; // remainder
+		uint8_t b_neg;  // true if negative
+		uint8_t digits_rem; // digits of remainder
+
+	public:
+		/**
+		 * @brief format for printing
+		 * 
+		 * @param dig_quo if set > 0, keep at least dig_quo digits (except +/- sign)
+		 * @param opt  see DIVFMT.
+		 * @return _div_chars returns as helper class which keeps converted string.
+		 */
+		_div_chars format(int dig_quo = 0, uint32_t opt = DIVFMT::STD) const;
+	};
+
+	/**
+	 * @brief compute division and remains by 10 without performing / nor %.
+	 * 
+	 * @param val the value to divide.
+	 * @return div_result_i32 the result of division (quotient/remainder/+,-sign)
+	 */
 	div_result_i32 div10(int32_t val);
 
-	// div100 (val can be up to 999999=>9999.99)
-	//   compute division and remains by 100 without performing / nor %.
-	// return: div_result_i32
+	/**
+	 * @brief compute division and remains by 100 without performing / nor %.
+	 *
+	 * @param val the value top divide (note: possible value can be -999999 to 999999).
+	 * @return div_result_i32 the result of division (quotient/remainder/+,-sign)
+	 */
 	div_result_i32 div100(int32_t val);
 
-	// div1000 (val can be up to 9999999>9999.999)
-	//   compute division and remains by 1000 without performing / nor %.
-	// return: div_result_i32
+	/**
+	 * @brief compute division and remains by 1000 without performing / nor %.
+	 * 
+	 * @param val the value top divide (note: possible value can be -9999999 to 9999999).
+	 * @return div_result_i32 the result of division (quotient/remainder/+,-sign)
+	 */
 	div_result_i32 div1000(int32_t val);
 
 	/**
