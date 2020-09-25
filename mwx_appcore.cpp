@@ -561,6 +561,16 @@ void _MWX_vOnWakeup() {
 	Buttons._on_wakeup();
 }
 
+
+/**
+ * @brief support function for printf_()
+ * 
+ * @param c 
+ */
+void _putchar(char c) {
+	Serial << c;
+}
+
 /****************************************************************************/
 /***        END OF FILE                                                   ***/
 /****************************************************************************/
