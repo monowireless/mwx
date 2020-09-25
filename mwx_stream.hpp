@@ -16,6 +16,7 @@
 #include "tweprintf.h"
 
 #include "mwx_common.hpp"
+#include "mwx_utils.hpp"
 #include "mwx_periph.hpp"
 #include "mwx_debug.h"
 
@@ -323,7 +324,7 @@ namespace mwx { inline namespace L1 {
 
 		stream() : _bReady(0), _bSetup(0), _bError(0), _timeout_centi_sec(_timeout_default), pvOutputContext(nullptr) {}
 
-		inline operator bool() { return _bReady; }
+		// inline operator bool() { return _bReady; }
 		inline bool _setup_finished() { return _bSetup; }
 
 		struct _value_type_s {
@@ -478,6 +479,12 @@ namespace mwx { inline namespace L1 {
 			return *get_Derived();
 		}
 
+		template <int S>
+		inline D& operator << (const uint8_t(&v)[S]) {
+			for (int i = 0; i < S; i++) get_Derived()->write(uint8_t(v[i]));
+			return *get_Derived();
+		}
+
 		inline D& operator << (uint8_t c) {
 			get_Derived()->write(c);
 			return *get_Derived();
@@ -504,6 +511,23 @@ namespace mwx { inline namespace L1 {
 
 		inline D& operator << (double d) {
 			(size_t)fctprintf(get_pfcOutout(), pvOutputContext, "%.2f", d);
+			return *get_Derived();
+		}
+
+		inline D& operator << (const mwx::_div_chars&& divc) {
+			for(auto x : divc) { get_Derived()->write(x); }
+			return *get_Derived();
+		}
+		
+		inline D& operator << (const mwx::div_result_i32&& divr) {
+			auto divc = divr.format();
+			for(auto x : divc) { get_Derived()->write(x); }
+			return *get_Derived();
+		}
+		
+		inline D& operator << (const mwx::div_result_i32& divr) {
+			auto divc = divr.format();
+			for(auto x : divc) { get_Derived()->write(x); }
 			return *get_Derived();
 		}
 
@@ -596,7 +620,7 @@ namespace mwx { inline namespace L1 {
 			auto derived = get_Derived();
 			while (1) {
 				// timeout check
-				if (millis() - t_now > _timeout_centi_sec * 10) {
+				if (_timeout_centi_sec != 0xFF && (millis() - t_now > _timeout_centi_sec * 10)) {
 					_bError = 1;
 					return -1;
 				}
@@ -647,6 +671,13 @@ namespace mwx { inline namespace L1 {
 			v = r & 0xFF;
 			return *get_Derived();
 		}
+
+		inline D& operator >> (char_t& v) {
+			uint32_t t_now = millis();
+			int r = _read_byte(t_now);
+			v = r & 0xFF;
+			return *get_Derived();
+		}
 		
 		template <int S>
 		inline D& operator >> (uint8_t(&v)[S]) {
@@ -681,6 +712,13 @@ namespace mwx { inline namespace L1 {
 		 * @returns	Null if it fails, else the pv output context.
 		 */
 		inline void* get_pvOutputContext() { return pvOutputContext; }
+
+		/**
+		 * @brief Set the pvOutputContext object
+		 * 
+		 * @param p object which implements 
+		 */
+		inline void set_pvOutputContext(void *p) { pvOutputContext = p; }
 
 		/**
 		 * @fn	inline tfcOutput stream::get_pfcOutout()
