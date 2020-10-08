@@ -203,8 +203,6 @@ uint8_t mwx::L1::duplciate_checker::_node_ele_clean(_node_ele *pDupPkt) {
 }
 
 bool mwx::L1::duplciate_checker::_node_ele_add(_node_ele *pDupPkt, uint8_t u8Seq) {
-	int i;
-
 	uint8_t u8ByteOff;
 	uint8_t u8BitOff;
 

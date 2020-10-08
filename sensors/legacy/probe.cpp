@@ -28,6 +28,7 @@ namespace mwx {
 
 	bool sns_proble_ltr308als(uint32_t u32opt) {
 		if (auto&& wrt = Wire.get_writer(LTR308ALS_ADDRESS)) {
+			(void)wrt;
 			// wrt << 0x00;
 			// wrt << 0x00;
 		} else 

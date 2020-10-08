@@ -177,11 +177,11 @@ vfPrintf(psSer, "\n\rBME280 bBME280StartRead");
 
 	if (IS_BME280()) {
 		com[0] = 0x01;		//	Hum Enable
-		bOk &= bSMBusWrite(BME280_ADDRESS, BME280_CTRL_HUM, 1, &com );
+		bOk &= bSMBusWrite(BME280_ADDRESS, BME280_CTRL_HUM, 1, com );
 	}
 
 	com[0] = (0x01<<5) | (0x01<<2) | 0x01;		//	Temp Enable | Pres Enable | Mode (0x01:forced mode)
-	bOk &= bSMBusWrite(BME280_ADDRESS, BME280_CTRL_MEAS, 1, &com );
+	bOk &= bSMBusWrite(BME280_ADDRESS, BME280_CTRL_MEAS, 1, com );
 
 	return bOk;
 }

@@ -513,9 +513,7 @@ void TWEINTCT_vProcessInputByte_hw(TWEINTRCT_tsContext *psIntr, TWEINTRCT_tkeyco
 				
 				const uint8_t DEV_ADDR = 0x56;
 				uint8_t u8StartAddr = 0x00;
-				uint8_t u8Status = 0;
 				uint8_t u8Data[64];
-				uint8_t* p;
 				uint8_t i = 0;
 
 				uint32_t u32MagicNumber;
@@ -538,7 +536,7 @@ void TWEINTCT_vProcessInputByte_hw(TWEINTRCT_tsContext *psIntr, TWEINTRCT_tkeyco
 				}
 				
 				Serial << crlf;
-				for (int i = 0; i < sizeof(u8Data); i++) {
+				for (i = 0; i < sizeof(u8Data); i++) {
 					Serial << format("%02X ", u8Data[i]);
 					if (i != sizeof(u8Data) - 1 && (i & 0xF) == 0xF) Serial << crlf;
 				}
@@ -572,7 +570,7 @@ void TWEINTCT_vProcessInputByte_hw(TWEINTRCT_tsContext *psIntr, TWEINTRCT_tkeyco
 
 					sPALData.u8OptionLength -= 4; // reserve area
 					Serial << crlf << format("  Opt[%d]: ", sPALData.u8OptionLength);
-					for(int i = 0; i < sPALData.u8OptionLength; i++, np++) {
+					for(i = 0; i < sPALData.u8OptionLength; i++, np++) {
 						Serial << format("%02X ", *np);	
 					}
 

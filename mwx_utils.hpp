@@ -128,7 +128,7 @@ namespace mwx { inline namespace L1 {
 		 * @param c 
 		 */
 		void push_front(char c) {
-			if (_idx() > 0) { --_idx(); _buff[_idx()] = c; }
+			if (_idx() > 0) { --_idx(); _buff[(uint8_t)_idx()] = c; }
 		}
 
 		/**
@@ -136,7 +136,7 @@ namespace mwx { inline namespace L1 {
 		 * 
 		 * @return const char* 
 		 */
-		const char* begin() const { return &_buff[_idx()]; }
+		const char* begin() const { return &_buff[(uint8_t)_idx()]; }
 		
 		/**
 		 * @brief end() iterator.

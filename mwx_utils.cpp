@@ -92,7 +92,7 @@ namespace mwx { inline namespace L1 {
 		int32_t dv = _div10_shift(val);
 		int32_t rem = val - dv * 10;
 
-		return {dv, rem, neg, 1};
+		return { dv, (int16_t)rem, neg, 1};
 	}
 	
 	// div100 (val can be up to 999999=>9999.99)
@@ -113,7 +113,7 @@ namespace mwx { inline namespace L1 {
 			rem += 100;
 		}
 
-		return {dv, rem, neg, 2};
+		return {dv, (int16_t)rem, neg, 2};
 	}
 
 	// div1000 (val can be up to 9999999>9999.999)
@@ -134,6 +134,6 @@ namespace mwx { inline namespace L1 {
 			rem -= 1000;
 		}
 
-		return {dv, rem, neg, 3};
+		return {dv, (int16_t)rem, neg, 3};
 	}
 }}
