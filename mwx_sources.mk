@@ -8,6 +8,7 @@ APPSRC_CXX+=mwx_periph_buttons.cpp
 APPSRC_CXX+=mwx_periph_analogue.cpp
 APPSRC_CXX+=mwx_stream.cpp
 APPSRC_CXX+=mwx_duplicate_checker.cpp
+APPSRC_CXX+=mwx_parser_pkt.cpp
 
 APPSRC_CXX+=settings/mwx_settings.cpp
 APPSRC_CXX+=settings/mwx_stgs_standard.cpp

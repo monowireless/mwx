@@ -51,9 +51,9 @@ namespace mwx { inline namespace L1 {
 			_setup_finished = 1;
 		}
 
-		// use board (this template shall not be used.)
+		// use board (with parameter)
 		template <class T>
-		T& use() {
+		T& use(uint32_t& opt) {
 			if (_id != 0) {
 				// already has an instance.
 				return get<T>();
@@ -63,8 +63,6 @@ namespace mwx { inline namespace L1 {
 				T* p = new T();
 				
 				_the_instance = *p;
-
-				uint32_t opt = _TWENET_CALLED_FROM_TWE_TWELITE; // on create (might not be used) 
 				p->on_create(opt);
 
 				return *p;
@@ -74,6 +72,13 @@ namespace mwx { inline namespace L1 {
 				T* p = reinterpret_cast<T*>((void*)0xdeadbeef); // when beaf dies, what would it be?
 				return *p;
 			}
+		}
+
+		// use board
+		template <class T>
+		T& use() {
+			uint32_t opt = _TWENET_CALLED_FROM_TWE_TWELITE; // on create (might not be used) 
+			return use<T>(opt);
 		}
 
 		// get board instance

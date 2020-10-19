@@ -67,6 +67,7 @@
 
 // mwx C++ parsing library
 #include "mwx_parser.hpp"
+#include "mwx_parser_pkt.hpp"
 
 // mwx C++ global defined instances (Serial, Timer?, ...)
 #include "mwx_common_instances.hpp"

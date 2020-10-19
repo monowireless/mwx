@@ -18,6 +18,7 @@ namespace mwx { inline namespace L1 {
 	namespace NETWORK {
 		static const uint8_t NONE = 0;
 		static const uint8_t SIMPLE = 1;
+		static const uint8_t LAYERTREE = 16;
 	};
 
 	class twenet_tx_cb_management {
