@@ -76,7 +76,11 @@ int main() {
         loop();
         if (_b_exit_app) break;
 
+#if defined(__APPLE__) || defined(__linux)
         usleep(1000); // make a small sleep
+#elif defined(_MSC_VER) || defined(__MINGW32__)
+        Sleep(1);
+#endif
         u32TickCount_ms = millis(); // update internal counter
     }
 

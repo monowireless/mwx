@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="mini.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libsrc\mwx_stdio.cpp">
+      <Filter>Source Files\libsrc</Filter>
+    </ClCompile>
+    <ClCompile Include="libsrc2\mwx_parser_pkt.cpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClCompile>
+    <ClCompile Include="libsrc2\mwx_stream.cpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClCompile>
+    <ClCompile Include="libsrc2\mwx_utils_crc8.cpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClCompile>
+    <ClCompile Include="libsrc1\twesercmd_ascii.c">
+      <Filter>Source Files\libsrc1</Filter>
+    </ClCompile>
+    <ClCompile Include="libsrc1\twesercmd_binary.c">
+      <Filter>Source Files\libsrc1</Filter>
+    </ClCompile>
+    <ClCompile Include="printf\printf.c">
+      <Filter>Source Files\printf</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="libsrc\_mwx_stdio.h">
+      <Filter>Source Files\libsrc</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc\mwx_serial_con.hpp">
+      <Filter>Source Files\libsrc</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_common.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_debug.h">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_parser.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_parser_pkt.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc\mwx_stdio.h">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_stream.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_utils.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_utils_alloc.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_utils_crc8.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_utils_payload.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_utils_smplbuf.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc1\twecommon.h">
+      <Filter>Source Files\libsrc1</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc1\twesercmd_gen.h">
+      <Filter>Source Files\libsrc1</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc1\tweserial.h">
+      <Filter>Source Files\libsrc1</Filter>
+    </ClInclude>
+    <ClInclude Include="printf\printf.h">
+      <Filter>Source Files\printf</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{fefd5e32-2db5-4c37-be1e-f20528bd408a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libsrc">
+      <UniqueIdentifier>{02fbb196-eb1f-4072-9635-88731dafb45d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libsrc1">
+      <UniqueIdentifier>{4ffa6a69-48e4-4b3d-bc1b-f33533744d71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libsrc2">
+      <UniqueIdentifier>{d9b4d3a3-ce43-472f-bd8a-c56b012c63b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\printf">
+      <UniqueIdentifier>{e816114a-8cc9-4549-9dff-31f90b3e84a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Test Files">
+      <UniqueIdentifier>{cf168efd-31d3-4890-915d-32296904609c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="test_msg.txt">
+      <Filter>Test Files</Filter>
+    </Text>
+  </ItemGroup>
+</Project>

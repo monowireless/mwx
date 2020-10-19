@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\libsrc">
+      <UniqueIdentifier>{b9449772-a263-4f49-81de-b9b28d66c3c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libsrc1">
+      <UniqueIdentifier>{4fb8880f-b191-4ba6-9b4c-cf72751724b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libsrc2">
+      <UniqueIdentifier>{0d976a1d-cf16-46e6-8abc-7f9617298b57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\printf">
+      <UniqueIdentifier>{f4453515-e5e6-487f-b4a0-ae497467c83f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Test Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="libsrc\_mwx_stdio.h">
+      <Filter>Source Files\libsrc</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc\mwx_serial_con.hpp">
+      <Filter>Source Files\libsrc</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc\mwx_stdio.h">
+      <Filter>Source Files\libsrc</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc1\twecommon.h">
+      <Filter>Source Files\libsrc1</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc1\twesercmd_gen.h">
+      <Filter>Source Files\libsrc1</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc1\tweserial.h">
+      <Filter>Source Files\libsrc1</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_common.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_debug.h">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_parser.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_parser_pkt.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_stream.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_utils.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_utils_alloc.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_utils_crc8.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_utils_payload.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="libsrc2\mwx_utils_smplbuf.hpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClInclude>
+    <ClInclude Include="printf\printf.h">
+      <Filter>Source Files\printf</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="libsrc\mwx_stdio.cpp">
+      <Filter>Source Files\libsrc</Filter>
+    </ClCompile>
+    <ClCompile Include="libsrc1\twesercmd_ascii.c">
+      <Filter>Source Files\libsrc1</Filter>
+    </ClCompile>
+    <ClCompile Include="libsrc1\twesercmd_binary.c">
+      <Filter>Source Files\libsrc1</Filter>
+    </ClCompile>
+    <ClCompile Include="libsrc2\mwx_parser_pkt.cpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClCompile>
+    <ClCompile Include="libsrc2\mwx_stream.cpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClCompile>
+    <ClCompile Include="libsrc2\mwx_utils_crc8.cpp">
+      <Filter>Source Files\libsrc2</Filter>
+    </ClCompile>
+    <ClCompile Include="glancer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="printf\printf.c">
+      <Filter>Source Files\printf</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="test_msg.txt">
+      <Filter>Test Files</Filter>
+    </Text>
+  </ItemGroup>
+</Project>

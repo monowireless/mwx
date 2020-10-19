@@ -24,6 +24,10 @@
 ```
 Makefile     : make によるビルド実行のための定義ファイル
 
+mwx_stdio.sln    : Visual Studio 用のソリューション定義
+glancer.vcxproj* : Visual Studio 用のプロジェクト定義 (glancer.cpp)
+mini.vcxproj*    : Visual Studio 用のプロジェクト定義 (mini.cpp)
+
 [ソースファイル]
 glancer.cpp  : ライブラリ利用コード例１
 mini.cpp     : ライブラリ仕様コード例２
@@ -106,6 +110,12 @@ $ make clean upd-mwx upd-twesettings all test
 | CXX                         | g++コンパイラコマンド名                                  |
 | CPP                         | gccコンパイラコマンド名                                  |
 | OBJDIR                      | コンパイル時の中間ファイルを格納するフォルダ名(`objs`)   |
+
+
+
+## Visual Studio用の定義
+
+Visual Studuo用の定義ファイル用意しています。このファイルは配布時の libsrc/libsrc1/libsrc2 のファイルを登録、ビルドできるようにしています。
 
 
 

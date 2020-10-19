@@ -2,3 +2,7 @@ glancer
 mini
 objs
 objs/*
+x64
+x64/*
+.vs
+.vs/*

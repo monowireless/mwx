@@ -4,10 +4,10 @@
 #pragma once
 
 #include <stdarg.h>
-#include <unistd.h>
 #include <stdio.h>
 
 #if defined(__APPLE__) || defined(__linux)
+#include <unistd.h>
 #include <termios.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -15,8 +15,8 @@
 #include <conio.h>
 #include <windows.h>
 /* serial functions */
-int TWETERM_iPutC(int c) { return _putch(c); }
-int TWETERM_iGetC() { if (_kbhit()) return _getch(); else return -1; }
+static inline int TWETERM_iPutC(int c) { return _putch(c); }
+static inline int TWETERM_iGetC() { if (_kbhit()) return _getch(); else return -1; }
 #endif
 
 #include "mwx_stream.hpp"
@@ -24,8 +24,10 @@ int TWETERM_iGetC() { if (_kbhit()) return _getch(); else return -1; }
 
 namespace mwx { inline namespace L1 {
 	class serial_con : public mwx::stream<serial_con> {
+#if defined(__APPLE__) || defined(__linux)
 		termios CookedTermIos; // cooked mode
 		termios RawTermIos; // raw mode
+#endif
 
 		int _c_read;
 		bool _begun;
