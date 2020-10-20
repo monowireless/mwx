@@ -60,6 +60,7 @@
 #include "mwx_periph_wire.hpp"
 #include "mwx_periph_spi.hpp"
 #include "mwx_periph_pulse_counter.hpp"
+#include "mwx_periph_eeprom.hpp"
 
 // mwx C++ library (twesettings wrapper)
 #include "settings/mwx_settings.hpp"

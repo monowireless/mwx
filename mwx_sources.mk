@@ -6,6 +6,7 @@ APPSRC_CXX+=mwx_periph.cpp
 APPSRC_CXX+=mwx_periph_dio.cpp
 APPSRC_CXX+=mwx_periph_buttons.cpp
 APPSRC_CXX+=mwx_periph_analogue.cpp
+APPSRC_CXX+=mwx_periph_eeprom.cpp
 APPSRC_CXX+=mwx_stream.cpp
 APPSRC_CXX+=mwx_duplicate_checker.cpp
 APPSRC_CXX+=mwx_parser_pkt.cpp

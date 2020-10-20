@@ -534,7 +534,9 @@ namespace mwx {  inline namespace L1 {
 				_new_palobj(out, au8snsdata, au8snsdata + u8snsdatalen);
 				return out;
 			} else {
-				return *reinterpret_cast<T*>((void*)_pobj);
+				//	T* p __attribute__((__may_alias__)) = reinterpret_cast<T*>((void*)_pobj);
+				T* p = static_cast<T*>((void*)_pobj);
+				return *p;
 			}		
 		}
 

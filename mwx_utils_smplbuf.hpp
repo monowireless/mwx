@@ -441,6 +441,15 @@ namespace mwx { inline namespace L1 {
 				set_obj();
 			}
 
+			// handles move constructor
+			_smplbuf_strm_hlpr(self_type&& ref) {
+				set_obj();
+				_idx_read = ref._idx_read;
+			}
+
+			// deletes copy constructor
+			_smplbuf_strm_hlpr(const self_type& ref) = delete;
+
 		public: // implement stream interfacee
 		
 			/**

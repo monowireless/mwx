@@ -122,12 +122,12 @@ objs:
 	mkdir -p $(OBJDIR)
 
 upd-mwx:
-	rm -rf $(LIB_MWX_DIR)
+	rm -f $(LIB_MWX_DIR)/*
 	mkdir -p $(LIB_MWX_DIR)
 	cp -pvf $(LIB_MWX_FILES_ORIG) $(LIB_MWX_DIR)
 
 upd-twesettings:
-	rm -rf $(LIB_TWESETTINGS_DIR)
+	rm -r $(LIB_TWESETTINGS_DIR)/*
 	mkdir -p $(LIB_TWESETTINGS_DIR)
 	cp -pvf $(LIB_TWESETTINGS_FILES_ORIG) $(LIB_TWESETTINGS_DIR)
 
