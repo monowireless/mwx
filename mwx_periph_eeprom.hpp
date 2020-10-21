@@ -44,12 +44,10 @@ namespace mwx {  inline namespace L1 {
     	/**
 		 * @brief helper class with mwx::stream interface.
 		 */
-		class _eep_strm_hlpr : public mwx::stream<_eep_strm_hlpr> {
+		class _eep_strm_hlpr : public mwx::stream<_eep_strm_hlpr>, public mwx::_stream_helper_array_type<periph_eeprom> {
 			using SUPER_STREAM = mwx::stream<_eep_strm_hlpr>;
+            using SUPER_HLPR = mwx::_stream_helper_array_type<periph_eeprom>;
 			using self_type = _eep_strm_hlpr;
-
-			periph_eeprom* _ref;
-			uint16_t _idx_read;
 
 			/**
 			 * @brief Set the this object pointer to stream class.
@@ -60,47 +58,19 @@ namespace mwx {  inline namespace L1 {
 			}
 
 		public: // override constructors/assignment operators/initialization methods.
-			_eep_strm_hlpr(periph_eeprom& ref) : _ref(&ref), _idx_read(0) {
+			_eep_strm_hlpr(periph_eeprom& ref) : SUPER_HLPR(ref) {
 				set_obj();
 			}
 
-            // move operator
-            _eep_strm_hlpr(self_type&& ref) {
-                set_obj(); // must do this!
-                _idx_read = ref._idx_read;
-            }
+			// handles move constructor
+			_eep_strm_hlpr(self_type&& ref) : SUPER_HLPR(std::forward<self_type>(ref)) {
+				set_obj();
+			}
 
             // remove copy operator
             _eep_strm_hlpr(const self_type&) = delete;
 
 		public: // implement stream interfacee
-		
-			/**
-			 * @brief rewind the read index to the head.
-			 * 
-			 */
-			inline void rewind() {
-				_idx_read = 0;
-			}
-
-        	/**
-			 * @brief set the posision
-			 * 
-			 */
-			inline void seek(int n) {
-                if (n < 0) _idx_read = (*_ref).size() - n;
-                else _idx_read = n;
-			}
-
-			/**
-			 * @brief check if there is remaining buffer to read.
-			 * 
-			 * @return int 0:no data 1:there is data to read
-			 */
-			inline int available() {
-				return (_idx_read < _ref->size());
-			}
-
 			/**
 			 * @brief read a byte from buffer.
 			 * 
@@ -108,8 +78,8 @@ namespace mwx {  inline namespace L1 {
 			 */
 			inline int read() { 
                 if (available()) {
-                    uint8_t c = (*_ref).read(_idx_read);
-                    _idx_read++;
+                    uint8_t c = SUPER_HLPR::_ref->read(SUPER_HLPR::_idx_rw);
+                    SUPER_HLPR::_idx_rw++;
                     return c;
                 } else {
                     return -1;
@@ -126,9 +96,11 @@ namespace mwx {  inline namespace L1 {
 			 */
 			inline size_t write(int n) {
 				// append a byte
-                (*_ref).write(_idx_read, n);
-                _idx_read++;
-				return 1;
+                if (SUPER_HLPR::_idx_rw < SUPER_HLPR::_ref->size()) {
+                    SUPER_HLPR::_ref->write(SUPER_HLPR::_idx_rw, n);
+                    SUPER_HLPR::_idx_rw++;
+				    return 1;
+                } else return 0;
 			}
 
 			/**

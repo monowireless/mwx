@@ -36,6 +36,10 @@
 #define BIN 2
 
 namespace mwx { inline namespace L1 {
+	static const int MWX_SEEK_END = -1;
+	static const int MWX_SEEK_CUR = 1;
+	static const int MWX_SEEK_SET = 0;
+
     typedef void (*tfcOutput)(char character, void* arg);
 
 	class _printobj {
@@ -739,4 +743,52 @@ namespace mwx { inline namespace L1 {
 		 */
 		inline tfcOutput get_pfcOutout() { return get_Derived()->vOutput; }
 	};
-}}
+
+	template <class T>
+	class _stream_helper_array_type {
+	protected:
+		T* _ref;
+		int _idx_rw;
+
+	public:
+		_stream_helper_array_type() : _ref(nullptr), _idx_rw(0) {}
+		_stream_helper_array_type(T& ref) : _ref(&ref), _idx_rw(0) {}
+		// move constructor
+		_stream_helper_array_type(_stream_helper_array_type&& ref) : _ref(ref._ref), _idx_rw(ref._idx_rw) {}
+
+		/**
+		 * @brief rewind the read index to the head.
+		 */
+		inline void rewind() { _idx_rw = 0; }
+
+		/**
+		 * @brief set the position.
+		 */
+		inline int seek(int offset, int whence = MWX_SEEK_SET) { 
+			switch (whence) {
+				case MWX_SEEK_END: _idx_rw = _ref->size() + offset; break;
+				case MWX_SEEK_CUR: _idx_rw += offset; break;
+				case MWX_SEEK_SET:
+				default:
+					_idx_rw = offset;
+			}
+			if (_idx_rw < 0) _idx_rw = 0;
+			if (_idx_rw > _ref->size()) _idx_rw = _ref->size();
+			return tell();
+		}
+
+		/**
+		 * @brief get the position.
+		 */
+		inline int tell() { return _idx_rw >= _ref->size() ? -1 : _idx_rw; }
+
+		/**
+		 * @brief check if there is remaining buffer to read.
+		 * 
+		 * @return int 0:no data 1:there is data to read
+		 */
+		inline int available() {
+			return (_idx_rw < _ref->size());
+		}
+	};
+}} // L1 // mwx

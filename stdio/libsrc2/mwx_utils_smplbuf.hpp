@@ -421,12 +421,10 @@ namespace mwx { inline namespace L1 {
 		 *        note: do not implement mwx::smpl_buf methods.
 		 * 
 		 */
-		class _smplbuf_strm_hlpr : public mwx::stream<_smplbuf_strm_hlpr> {
+		class _smplbuf_strm_hlpr : public mwx::stream<_smplbuf_strm_hlpr>, public mwx::_stream_helper_array_type<_smplbuf> {
 			using SUPER_STREAM = mwx::stream<_smplbuf_strm_hlpr>;
+			using SUPER_HLPR = mwx::_stream_helper_array_type<_smplbuf>;
 			using self_type = _smplbuf_strm_hlpr;
-
-			_smplbuf* _ref;
-			uint16_t _idx_read;
 
 			/**
 			 * @brief Set the this object pointer to stream class.
@@ -437,60 +435,54 @@ namespace mwx { inline namespace L1 {
 			}
 
 		public: // override constructors/assignment operators/initialization methods.
-			_smplbuf_strm_hlpr(_smplbuf& ref) : _ref(&ref), _idx_read(0) {
+			_smplbuf_strm_hlpr(_smplbuf& ref) : SUPER_HLPR(ref)  {
 				set_obj();
 			}
 
 			// handles move constructor
-			_smplbuf_strm_hlpr(self_type&& ref) {
+			_smplbuf_strm_hlpr(self_type&& ref) : SUPER_HLPR(std::forward<self_type>(ref)) {
 				set_obj();
-				_idx_read = ref._idx_read;
 			}
 
 			// deletes copy constructor
 			_smplbuf_strm_hlpr(const self_type& ref) = delete;
 
 		public: // implement stream interfacee
-		
-			/**
-			 * @brief rewind the read index to the head.
-			 * 
-			 */
-			inline void rewind() {
-				_idx_read = 0;
-			}
-
-			/**
-			 * @brief check if there is remaining buffer to read.
-			 * 
-			 * @return int 0:no data 1:there is data to read
-			 */
-			inline int available() {
-				return (_idx_read < _ref->size());
-			}
-
 			/**
 			 * @brief read a byte from buffer.
 			 * 
 			 * @return int -1:error or read byte
 			 */
 			inline int read() { 
-				return available() ? (*_ref)[_idx_read++] : -1;
+				return SUPER_HLPR::available() ? (*SUPER_HLPR::_ref)[SUPER_HLPR::_idx_rw++] : -1;
 			}
 
-			inline void flush(void) { } // do nothing
-
 			/**
-			 * @brief append one entry
+			 * @brief write at the pos or append it.
 			 * 
 			 * @param n 
 			 * @return size_t 
 			 */
 			inline size_t write(int n) {
+				int ret;
 				// append a byte
-				bool ret = _ref->append(T(n));
+				if (SUPER_HLPR::_idx_rw >= SUPER_HLPR::_ref->size()) {
+					// append at the end
+					ret = SUPER_HLPR::_ref->append(T(n));
+					SUPER_HLPR::_idx_rw = SUPER_HLPR::_ref->size(); // at the end
+				} else {
+					// over write
+					(*SUPER_HLPR::_ref)[SUPER_HLPR::_idx_rw++] = T(n);
+					ret = 1;
+				}
+					
 				return ret ? 1 : 0;
 			}
+
+			/**
+			 * @brief flush it, do nothing
+			 */
+			inline void flush(void) { } // do nothing
 
 			/**
 			 * @brief output function for printf_ library.
@@ -515,7 +507,7 @@ namespace mwx { inline namespace L1 {
 			 */
 			inline std::pair<T*, T*> to_stream() {
 				static_assert(sizeof(T) == 1, "smplbuf::to_stream() does not support types other than bytetype(char,uint8_t,..).");
-				return std::make_pair(_ref->begin(), _ref->end());
+				return std::make_pair(SUPER_HLPR::_ref->begin(), SUPER_HLPR::_ref->end());
 			}
 		};
 
