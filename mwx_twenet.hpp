@@ -60,7 +60,7 @@ namespace mwx { inline namespace L1 {
 			}
 			else if (!_setup_finished) {
 				_id = T::TYPE_ID;
-				T* p = new T();
+				T* p = new T(); // NOTE: do not consider about delete object.
 				
 				_the_instance = *p;
 				p->on_create(opt);

@@ -41,6 +41,21 @@ namespace mwx { inline namespace L1 {
 			setup();
 		}
 
+		~appdefs_virt() {
+			if (p_body) delete p_body; // note: only delete memory block, not calling destructor of created object
+									   // but to call unuse<T> explicitly.
+		}
+
+		// destruct the object (not used function)
+		template <class T>
+		void unuse() {
+			if (p_body) {
+				T* p = static_cast<T*>(p_body);
+				p_body = nullptr;
+				delete p;
+			}
+		}
+
 		template <class T>
 		appdefs_virt& operator = (const T& ref) {
 			static_assert(std::is_base_of<appdefs_crtp<T>, T>::value == true, "is not base of appdefs_crtp<T>.");

@@ -29,7 +29,7 @@ protected:
 public:
     using super = _mwx_alloc<T>;
 	alloc_heap() : _p_heap(nullptr), _sz(0) {}
-	// ~alloc_heap() { if (super::_p) delete(super::_p); } // no delete on the system!
+	~alloc_heap() { if (super::_p) delete(super::_p); }
 
 	void init_heap(uint16_t s) {
         if (_p_heap == nullptr) {

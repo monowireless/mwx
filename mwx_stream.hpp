@@ -751,7 +751,9 @@ namespace mwx { inline namespace L1 {
 		int _idx_rw;
 
 	public:
-		_stream_helper_array_type() : _ref(nullptr), _idx_rw(0) {}
+		// _stream_helper_array_type() : _ref(nullptr), _idx_rw(0) {}
+
+		// normal constructor
 		_stream_helper_array_type(T& ref) : _ref(&ref), _idx_rw(0) {}
 		// move constructor
 		_stream_helper_array_type(_stream_helper_array_type&& ref) : _ref(ref._ref), _idx_rw(ref._idx_rw) {}
