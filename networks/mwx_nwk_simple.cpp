@@ -155,9 +155,12 @@ MWX_APIRET NwkSimple::transmit(packet_tx_nwk_simple<NwkSimple>& pkt) {
 }
 
 void NwkSimple::receive(mwx::packet_rx& rx) {
-	// firstly, duplicate checking.
-	uint8_t u8seq = rx.get_psRxDataApp()->u8Seq;
+	// packet struct from TWENET C layer
+	tsRxDataApp* pRx = (tsRxDataApp*)(rx.get_psRxDataApp());
 
+	// firstly, duplicate checking.
+	uint8_t u8seq = pRx->u8Seq;
+	
 	uint8_t u8Type = 0;
 	uint32_t u32AddrSrc = 0;
 	uint8_t u8AddrSrc_Lid = 0;
@@ -167,9 +170,16 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 	rx._network_type = _config.u8Type;
 	rx._network_handled = 1;
 
-	if (_config.u8Type == 0x01) {
-		// if cmd is not _config.u8cmd, skip
+	if (_config.u8Type == NETWORK::SIMPLE) {
+		// if cmd is not _config.u8cmd, the packet is networkless or another network.
 		if (rx.get_psRxDataApp()->u8Cmd != _config.get_pkt_cmd_part()) {
+			if (_config.bRcvNwkLess) {
+				// receive networkless packet
+				rx._network_handled = 0;
+				rx._network_type = NETWORK::NONE;
+
+				rx.get_payload().attach(pRx->auData, pRx->u8Len, pRx->u8Len);
+			}
 			return;
 		}
 
@@ -196,7 +206,6 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 		}
 		
 		// now accepting the packet!
-		tsRxDataApp* pRx = (tsRxDataApp*)(rx.get_psRxDataApp());
 		MWX_DebugMsg(DEBUG_LVL, "{RX: %d:S=%X(%02x):D=%X:r=%d:Sq=%d}", u8Type, u8AddrSrc_Lid, u32AddrSrc, u32AddrDst, u8Rpt, pRx->u8Seq);
 
 		// secure check
@@ -294,8 +303,8 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 
 			rx.get_payload().attach(pRx->auData + _get_header_size(), pRx->u8Len - _get_header_size(), pRx->u8Len - _get_header_size());
 			rx._network_handled = 0;
-		}
-	}
+		} 
+	} 
 }
 
 MWX_STATE(E_MWX::STATE_0, uint32_t eEvent, uint32_t u32evarg) {

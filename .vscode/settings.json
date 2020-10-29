@@ -1,11 +1,15 @@
 {
     "C_Cpp.errorSquiggles": "Enabled",
     "C_Cpp.default.includePath": [
+        "${env:MWSDK_TWENET_LIBSRC}/include/**",
+        "${env:MWSDK_TWENET_LIBSRC}/src/**",
         "../../../../Tools/VSCode/**",
         "../../../../TWENET/current/include/**",
         "../../../../TWENET/current/src/**"
     ],
     "C_Cpp.default.browse.path": [
+        "${env:MWSDK_TWENET_LIBSRC}/include/**",
+        "${env:MWSDK_TWENET_LIBSRC}/src/**",
         "../../../../Tools/VSCode/**",
         "../../../../TWENET/current/include/**",
         "../../../../TWENET/current/src/**"

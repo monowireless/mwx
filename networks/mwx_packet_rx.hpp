@@ -13,7 +13,7 @@ namespace mwx { inline namespace L1 {
 		mwx::smplbuf<uint8_t> _buf;
 
 		uint8_t _addr_src_lid; // source address (logical id)
-		uint8_t _len;
+		// uint8_t _len; // may not be used
 
 	public:
 		uint8_t _network_type;
@@ -25,7 +25,7 @@ namespace mwx { inline namespace L1 {
 		packet_rx(const tsRxDataApp* pRx, uint8_t nwk_type = 0) :
 			_pRx(pRx),
 			_buf(pRx->auData, pRx->u8Len, MAX_RX_APP_PAYLOAD),
-			_addr_src_lid(0xFF), _len(0),
+			_addr_src_lid(0xFF), // _len(0),
 			_network_type(nwk_type), _network_handled(0) {}
 
 		packet_rx() : _pRx(nullptr), _buf() {}

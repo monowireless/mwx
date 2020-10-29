@@ -15,6 +15,7 @@ namespace mwx { inline namespace L1 {
 		uint8_t u8RepeatMax;
 		uint8_t u8Type;
 		uint8_t u8Cmd; // b0..b3:Packet Cmd, b7:encrypt b6:enc+rcv plain
+		bool_t bRcvNwkLess;
 
 		uint8_t get_pkt_cmd_part() { return u8Cmd & 0x07; }
 		bool is_mode_pkt_encrypt() { return (u8Cmd & 0x80); }
@@ -184,6 +185,12 @@ namespace mwx { inline namespace L1 {
 			if (v._b_recv_plain_pkt) _config.u8Cmd |= 0x40; // rcv plain
 			return *this;
 		}
+
+		struct receive_nwkless_pkt {
+			bool _b;
+			receive_nwkless_pkt(bool b = true) : _b(b) {}
+		};
+		NwkSimple& operator << (receive_nwkless_pkt&& v) { _config.bRcvNwkLess = v._b; }
 
 		struct dup_check {
 			uint8_t _maxnodes;
