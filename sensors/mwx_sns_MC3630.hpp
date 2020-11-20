@@ -69,8 +69,10 @@ namespace mwx {
 
             void end() {
                 // stop the working.
-                bConnect = false;
-                _sleep(); 
+                if (bConnect) {
+                    bConnect = false;
+                    _sleep();
+                }
             }
 
             void on_sleep() {

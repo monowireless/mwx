@@ -1,0 +1,4 @@
+#pragma once
+
+#include "boards/mwx_brd_cue.hpp"
+using CUE = mwx::BrdCUE;

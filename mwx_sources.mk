@@ -22,6 +22,7 @@ APPSRC_CXX+=boards/mwx_brd_pal_mag.cpp
 APPSRC_CXX+=boards/mwx_brd_pal_notice.cpp
 APPSRC_CXX+=boards/mwx_brd_monostick.cpp
 APPSRC_CXX+=boards/mwx_brd_app_twelite.cpp
+APPSRC_CXX+=boards/mwx_brd_cue.cpp
 
 APPSRC_CXX+=networks/mwx_nwk_simple.cpp
 
