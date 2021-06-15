@@ -58,6 +58,77 @@ namespace mwx { inline namespace L1 {
 			static const uint8_t PORT_ALT = 0x01;
 		};
 		
+	private:
+		void _begin() {
+			if (_setup_finished()) {
+				// configure with alt port
+				//   NOTE: The default UART1 ports set is different from AHI defaults from mwx.
+				//         default: DIO11(TxD),9(RxD) / alternative: DIO14,15.
+				if(_serdef._u8Port == E_AHI_UART_1) {
+					vAHI_UartSetLocation(E_AHI_UART_1, 
+							(_serdef._u8Conf & E_CONF::PORT_ALT) ? TRUE : FALSE);
+				}
+			
+				TWETERM_tsSerDefs sDef;
+				sDef.au8RxBuf = _au8SerialRxBuffer;
+				sDef.au8TxBuf = _au8SerialTxBuffer;
+				sDef.u16RxBufLen = BUF_RX;
+				sDef.u16TxBufLen = BUF_TX;
+
+				sDef.u32Baud = 115200;
+				TWETERM_vInitJen(_psSer, _serdef._u8Port, &sDef);
+				_set_baudrate(_serdef._u16HectBaud);
+
+				SUPER::pvOutputContext = (void*)_psSer;
+				SUPER::_bReady = 1;
+			}
+		}
+
+		void _set_baudrate(uint16 u16hbaud) {
+			uint16 u16Divisor;
+			uint8 u8cbp;
+
+			switch(u16hbaud) {
+			case 96:
+				u16Divisor = 104;
+				u8cbp = 15;
+				break;
+			case 192:
+				u16Divisor = 52;
+				u8cbp = 15;
+				break;
+			case 384:
+				u16Divisor = 26;
+				u8cbp = 15;
+				break;
+			case 576:
+				u16Divisor = 23;
+				u8cbp = 11;
+				break;
+			case 768:
+				u16Divisor = 13;
+				u8cbp = 15;
+				break;
+			case 1152:
+				u16Divisor = 10;
+				u8cbp = 13;
+				break;
+			case 2304:
+				u16Divisor = 5;
+				u8cbp = 13;
+				break;
+			default:
+				/* Calculate divisor: baud=1Mbps/Div */
+				u16Divisor   = (uint16)((10000UL + u16hbaud/2) / u16hbaud);
+				u8cbp = 15; // default value
+				break;
+			}
+
+			// ボーレート
+			vAHI_UartSetBaudDivisor(_serdef._u8Port, u16Divisor);
+			vAHI_UartSetClocksPerBit(_serdef._u8Port, u8cbp);
+		}
+
 	public:
 		using SUPER = mwx::stream<serial_jen>;
 
@@ -66,7 +137,7 @@ namespace mwx { inline namespace L1 {
 			_psSer = nullptr;
 			_serdef._u8Port = u8Port;
 			_serdef._u16HectBaud = 1152;
-			_serdef._u8Conf = 0;
+			_serdef._u8Conf = 0xFF; // set other value when begins.
 
 			_surr_obj = nullptr;
 
@@ -89,38 +160,25 @@ namespace mwx { inline namespace L1 {
 			}
 		}
 
-		void _begin() {
-			if (_setup_finished()) {
-				// configure with alt port
-				//   NOTE: The default UART1 ports set is different from AHI defaults from mwx.
-				//         default: DIO11(TxD),9(RxD) / alternative: DIO14,15.
-				if(_serdef._u8Port == E_AHI_UART_1) {
-					vAHI_UartSetLocation(E_AHI_UART_1, 
-							(_serdef._u8Conf & E_CONF::PORT_ALT) ? TRUE : FALSE);
-				}
-			
-				TWETERM_tsSerDefs sDef;
-				sDef.au8RxBuf = _au8SerialRxBuffer;
-				sDef.au8TxBuf = _au8SerialTxBuffer;
-				sDef.u16RxBufLen = BUF_RX;
-				sDef.u16TxBufLen = BUF_TX;
-
-				sDef.u32Baud = _serdef._u16HectBaud * 100;
-				TWETERM_vInitJen(_psSer, _serdef._u8Port, &sDef);
-
-				SUPER::pvOutputContext = (void*)_psSer;
-				SUPER::_bReady = 1;
-			}
-		}
-
 		// begin() : start UART port
 		//   - shall call setup() in advance.
-		void begin(uint32_t speed = 115200, uint8_t config = 0x00) {
+		//   so far, config is NOT handled.
+		void begin(uint32_t speed = 115200, uint8_t config = 0xff) {
 			if (_setup_finished()) {
-				_serdef._u8Conf = config;
-				_serdef._u16HectBaud = _serial_get_hect_baud(speed);
+				uint16 hbaud = _serial_get_hect_baud(speed);
 
-				_begin();
+				if (_serdef._u8Conf == 0xff) {
+					// initial, firstly begins.
+					_serdef._u8Conf = (config == 0xff) ? 0 : config;
+					_serdef._u16HectBaud = hbaud;
+					_begin();
+				} else {
+					// change baud, already begun.
+					if (hbaud != _serdef._u16HectBaud) {
+						_serdef._u16HectBaud = hbaud;
+						_set_baudrate(hbaud);
+					}
+				}
 			}
 		}
 
@@ -170,7 +228,7 @@ namespace mwx { inline namespace L1 {
 		// called when waking up.
 		void _on_wakeup() {
 			if (_setup_finished()) {
-				begin(_serdef._u16HectBaud * 100);
+				_begin(); // re-begin
 			}
 		}
 
