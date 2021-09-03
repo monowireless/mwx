@@ -103,10 +103,17 @@ static uint8 u8Dirty = 0; // should reload this
  * E_TWESTG_DEFSETS_CHANNELS_3（チャネル設定、最大３チャネル）を削除する
  */
 uint8 SETSTD_CUST_COMMON[SIZE_SETSTD_CUST_COMMON] = {
-	8   // 総バイト数(このバイトは含まない。手計算で間違えないように入力！)
-	, E_TWESTG_DEFSETS_APPID, (TWESTG_DATATYPE_UINT32 << 4) | 4, 0x00, 0x34, 0x56, 0x78 
-	, E_TWESTG_DEFSETS_CHANNELS_3, TWESTG_DATATYPE_UNUSE
+	14   // 総バイト数(このバイトは含まない。手計算で間違えないように入力！)
+	, E_TWESTG_DEFSETS_APPID, (TWESTG_DATATYPE_UINT32 << 4) | 4, 0x00, 0x34, 0x56, 0x78 // [1..6]	
+	, E_TWESTG_DEFSETS_CHANNEL, (TWESTG_DATATYPE_UINT8 << 4) | 1, 13 // [7..9]
+	, E_TWESTG_DEFSETS_LOGICALID, (TWESTG_DATATYPE_UINT8 << 4) | 1, 13 // [10..12]
+	, E_TWESTG_DEFSETS_CHANNELS_3, TWESTG_DATATYPE_UNUSE // [13..14]
 };
+
+#define IDX_DEFSETS_APPID 1
+#define IDX_DEFSETS_CHANNEL 7
+#define IDX_DEFSETS_LOGICALID 10
+#define IDX_DEFSETS_CHANNELS_3 13
 
 /*!
  * 設定定義(tsSettings)
@@ -662,17 +669,28 @@ namespace mwx { inline namespace L1 {
 	}
 
 	void StgsStandard::set_default_appid(uint32_t u32appid) {
-		uint8_t *q = &SETSTD_CUST_COMMON[3];
+		uint8_t *q = &SETSTD_CUST_COMMON[IDX_DEFSETS_APPID + 2];
 		S_DWORD(q, u32appid);
 		INTRCT_USER_APP_ID = u32appid;
 	}
 
+	void StgsStandard::set_default_lid(uint8_t u8id) {
+		uint8_t *q = &SETSTD_CUST_COMMON[IDX_DEFSETS_LOGICALID + 2];
+		*q = u8id;
+	}
+
+	void StgsStandard::set_default_ch(uint8_t u8ch) {
+		uint8_t *q = &SETSTD_CUST_COMMON[IDX_DEFSETS_CHANNEL + 2];
+		*q = u8ch;
+	}
+
 	void StgsStandard::set_ch_multi() {
-		SETSTD_CUST_COMMON[7] = E_TWESTG_DEFSETS_CHANNEL;
+		SETSTD_CUST_COMMON[IDX_DEFSETS_CHANNELS_3] = E_TWESTG_DEFSETS_CHANNEL; // HIDE CHANNEL
+		SETSTD_CUST_COMMON[IDX_DEFSETS_CHANNEL] = 0xFE; // CHANNEL entry to DUMMY ENTRY
 	}
 
 	bool StgsStandard::_get_ch_multi() {
-		return SETSTD_CUST_COMMON[7] == E_TWESTG_DEFSETS_CHANNEL;
+		return SETSTD_CUST_COMMON[IDX_DEFSETS_CHANNELS_3] == E_TWESTG_DEFSETS_CHANNEL;
 	} 
 
 	void StgsStandard::set_appname(const char* appname) {

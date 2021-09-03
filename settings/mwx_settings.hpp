@@ -28,6 +28,8 @@ namespace mwx { inline namespace L1 {
 		// for << config.
 		struct appname { const char * _val; appname(const char *val) : _val(val) {} };
 		struct appid_default { uint32_t _val; appid_default(uint32_t val) : _val(val) {}};
+		struct ch_default { uint8_t _val; ch_default(uint8_t val) : _val(val) {}};
+		struct lid_default { uint8_t _val; lid_default(uint8_t val) : _val(val) {}};
 		struct ch_multi {};
 		struct open_at_start {};
 	}

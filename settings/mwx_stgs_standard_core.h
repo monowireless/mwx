@@ -26,7 +26,7 @@ extern const char *INTRCT_USER_APP_NAME;
 extern uint32_t INTRCT_USER_APP_ID;
 
 #ifndef SIZE_SETSTD_CUST_COMMON // if you want to add more custom settings, increase.
-# define SIZE_SETSTD_CUST_COMMON 24
+# define SIZE_SETSTD_CUST_COMMON 32
 #endif
 /**
  * custom config data array. (e.g. remove items, change default value)
@@ -51,7 +51,6 @@ enum class E_STGSTD_SETID {
 	OPTBITS = E_TWESTG_DEFSETS_OPTBITS,
 	UARTBAUD = E_TWESTG_DEFSETS_UARTBAUD,
 	
-	OPT_DWORD1 = E_TWESTG_DEFSETS_OPTBITS,
 	OPT_DWORD2 = E_TWESTG_DEFSETS_OPT_DWORD1,
 	OPT_DWORD3 = E_TWESTG_DEFSETS_OPT_DWORD2,
 	OPT_DWORD4 = E_TWESTG_DEFSETS_OPT_DWORD3,

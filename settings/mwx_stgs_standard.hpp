@@ -97,6 +97,8 @@ namespace mwx { inline namespace L1 {
 private:
 		void set_appname(const char*name);
 		void set_default_appid(uint32_t u32appid);
+		void set_default_lid(uint8_t u8lid);
+		void set_default_ch(uint8_t u8ch);
 		void set_ch_multi();
 		bool _get_ch_multi();
 
@@ -104,6 +106,8 @@ public:
 		// << operator settings
 		StgsStandard& operator << (SETTINGS::appname&& v) { set_appname(v._val); return *this; }
 		StgsStandard& operator << (SETTINGS::appid_default&& v) { set_default_appid(v._val); return *this; }
+		StgsStandard& operator << (SETTINGS::ch_default&& v) { set_default_ch(v._val); return *this; }
+		StgsStandard& operator << (SETTINGS::lid_default&& v) { set_default_lid(v._val); return *this; }
 		StgsStandard& operator << (SETTINGS::ch_multi&& v) { set_ch_multi(); return *this; }
 		StgsStandard& operator << (SETTINGS::open_at_start&& v);
 
@@ -120,8 +124,12 @@ public:
 		template <typename... Tail>
 		uint8_t* _hide_items(uint8_t*p, uint8_t*e, uint8_t head, Tail&&... tail) {
 			if (p + 2 < e) {
-				*p++ = uint8_t(head);
-				*p++ = TWESTG_DATATYPE_UNUSE;
+				if (   uint8_t(head) != uint8_t(E_STGSTD_SETID::LOGICALID)
+					&& uint8_t(head) != uint8_t(E_STGSTD_SETID::CHANNEL))
+				{
+					*p++ = uint8_t(head);
+					*p++ = TWESTG_DATATYPE_UNUSE;
+				}
 				return _hide_items(p, e, std::forward<Tail>(tail)...);
 			} else {
 				return nullptr;
@@ -145,6 +153,19 @@ public:
 				return false;
 		}
 
+		bool is_hidden(E_STGSTD_SETID setid) {
+			uint8_t *p = &SETSTD_CUST_COMMON[1];
+			uint8_t *e = &SETSTD_CUST_COMMON[1+SETSTD_CUST_COMMON[0]];
+
+			while(p < e) {
+				if (*p == uint8_t(setid) && *(p+1) == TWESTG_DATATYPE_UNUSE) return true;
+				p++;
+				int n_data = (*p & 0x0F);
+				p += n_data;
+			}
+			return false; // not found
+		}
+
 		// data acquisition (this is not efficient way to frequent query, since find_by_id() searches array linerly)
 		uint32_t u32appid() { return set.find_by_id(E_TWESTG_DEFSETS_APPID)->get_value()->uDatum.u32; }
 		uint8_t u8devid() { return set.find_by_id(E_TWESTG_DEFSETS_LOGICALID)->get_value()->uDatum.u8; }
@@ -158,6 +179,11 @@ public:
 		uint32_t u32opt4() { return set.find_by_id(E_TWESTG_DEFSETS_OPT_DWORD3)->get_value()->uDatum.u32; }
 		uint8_t u8encmode() { return set.find_by_id(int(E_STGSTD_SETID::ENC_MODE))->get_value()->uDatum.u8; }
 		const uint8_t * pu8enckeystr() { return set.find_by_id(int(E_STGSTD_SETID::ENC_KEY_STRING))->get_value()->uDatum.pu8; }
+
+		// return if screen is opened
+		bool is_screen_opened() {
+			return TWEINTRCT_bIsVerbose();
+		}
 
 	private:
 		void _reload(bool);
