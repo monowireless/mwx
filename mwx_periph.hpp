@@ -45,7 +45,9 @@ static inline void delayMicroseconds(uint32_t us) {
 }
 
 // random numbers (should move other hpp file)
-uint32_t random(uint32_t minval, uint32_t maxval = 0);
+namespace mwx {
+	uint32_t random(uint32_t minval, uint32_t maxval = 0);
+}
 
 /** @brief	peripherals interrupt record mask */
 extern uint32_t _periph_availmap;

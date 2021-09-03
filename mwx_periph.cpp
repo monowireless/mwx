@@ -8,7 +8,7 @@
 #include "mwx_periph.hpp"
 
 // generate random numbers
-uint32_t random(uint32_t minval, uint32_t maxval) {
+uint32_t mwx::random(uint32_t minval, uint32_t maxval) {
 	if (minval > maxval) {
 		uint32_t t;
 		t = minval;

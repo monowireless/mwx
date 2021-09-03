@@ -20,4 +20,5 @@ using std::make_pair;
 // function aliases
 static constexpr auto& mwx_snprintf = ::snprintf_;
 static constexpr auto& mwx_printf = ::printf_;
+static constexpr auto& random = mwx::random;
 #endif
