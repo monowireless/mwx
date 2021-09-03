@@ -6,6 +6,7 @@
 #include "../_tweltite.hpp"
 #include "mwx_networks.hpp"
 #include "../mwx_twenet.hpp"
+#include "../settings/mwx_stgs_standard.hpp"
 
 #include <utility>
 
@@ -15,6 +16,7 @@ namespace mwx { inline namespace L1 {
 		uint8_t u8RepeatMax;
 		uint8_t u8Type;
 		uint8_t u8Cmd; // b0..b3:Packet Cmd, b7:encrypt b6:enc+rcv plain
+		uint8_t u8RetryDefault;
 		bool_t bRcvNwkLess;
 
 		uint8_t get_pkt_cmd_part() { return u8Cmd & 0x07; }
@@ -110,8 +112,6 @@ namespace mwx { inline namespace L1 {
 		void receive(mwx::packet_rx& rx);
 
 	public:
-
-
 		MWX_APIRET transmit(packet_tx_nwk_simple<NwkSimple>& pkt);
 		
 		/**
@@ -126,7 +126,7 @@ namespace mwx { inline namespace L1 {
 
 			if (_config.u8Type == 0x01) {
 				pkt.get_payload().reserve_head(_get_header_size());
-				pkt.get_psTxDataApp()->u8Retry = 2;
+				pkt.get_psTxDataApp()->u8Retry = _config.u8RetryDefault;
 			}
 
 			return pkt;
@@ -190,7 +190,7 @@ namespace mwx { inline namespace L1 {
 			bool _b;
 			receive_nwkless_pkt(bool b = true) : _b(b) {}
 		};
-		NwkSimple& operator << (receive_nwkless_pkt&& v) { _config.bRcvNwkLess = v._b; }
+		NwkSimple& operator << (receive_nwkless_pkt&& v) { _config.bRcvNwkLess = v._b; return *this; }
 
 		struct dup_check {
 			uint8_t _maxnodes;
@@ -204,6 +204,23 @@ namespace mwx { inline namespace L1 {
 			_dupchk.setup(v._maxnodes, v._timeout_ms, v._tickscale);
 			return *this;
 		}
+
+		struct retry_default {
+			uint8_t _val;
+			retry_default(uint8_t v = 2) : _val(v) {}
+		};
+		NwkSimple& operator << (retry_default&& v) { _config.u8RetryDefault = v._val; return *this; }
+
+		// apply interactive mode settings.
+		NwkSimple& operator << (mwx::StgsStandard& set) {
+			_config.u8Lid = set.u8devid();
+			if (!set.is_hidden(E_STGSTD_SETID::POWER_N_RETRY)) {
+				_config.u8RetryDefault = set.u8retry();
+			}
+			return *this;
+		}
+public:
+		const NwkSimple_Config& get_config() const { return _config; }
 	};
 
 }}

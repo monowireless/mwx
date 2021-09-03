@@ -45,6 +45,7 @@ void NwkSimple::on_create(uint32_t& val) {
 	_config.u8Lid = 0xFE; // no id child
 	_config.u8RepeatMax = 2; // transmit same packet three times
 	_config.u8Type = 1; // default type
+	_config.u8RetryDefault = 2;
 
 	_dupchk.setup(); // apply the default parameter.
 	
