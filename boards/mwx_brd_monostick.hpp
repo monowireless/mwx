@@ -69,7 +69,7 @@ namespace mwx { inline namespace L1 {
 			if (TickTimer.available()) {
 				uint32_t ct = millis();
 		
-				digitalWrite(PIN_WDT, ((ct >> 7) & 0x1) ? HIGH : LOW); // H/L every 128ms
+				digitalWrite(PIN_WDT, ((ct >> 5) & 0x1) ? HIGH : LOW); // H/L every 128ms
 
 				if (_led_yellow) _led_yellow.tick();
 				if (_led_red) _led_red.tick();
