@@ -35,6 +35,8 @@ namespace mwx { inline namespace L1 {
 		
 		static const uint8_t PIN_LED = 5;  // LED
 
+		static const uint8_t PIN_SET = 12; // SET PIN
+
 	public: // sensor instances
 		SnsMC3630 sns_MC3630;
 

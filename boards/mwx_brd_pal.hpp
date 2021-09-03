@@ -11,6 +11,7 @@ namespace mwx { inline namespace L1 {
     class BrdPal {
     public:
         static const uint8_t PIN_BTN = 12; // button (as SET)
+		static const uint8_t PIN_SET = 12; // button (as SET)
 		static const uint8_t PIN_LED = 5;  // LED
 		static const uint8_t PIN_WDT = 13; // WDT (shall tick every 60sec)
 
