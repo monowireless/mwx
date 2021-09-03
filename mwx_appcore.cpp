@@ -377,8 +377,15 @@ extern "C" void cbToCoNet_vRxEvent(tsRxDataApp *pRx) {
 			the_vapp.cbToCoNet_vRxEvent(rx);
 		}
 		else {
+			bool_t b_handled = true; // default, handled
+
+			// call defailt function
+			on_rx_packet(rx, b_handled);
+
 			// if app is not defined, use receiver instead.
-			the_twelite.receiver._push(rx);
+			if (!b_handled) {
+				the_twelite.receiver._push(rx);
+			}
 		}
 
 		if (the_vhw) { the_vhw.cbToCoNet_vRxEvent(rx); }
@@ -402,7 +409,11 @@ extern "C" void cbToCoNet_vTxEvent(uint8 u8CbId, uint8 bStatus) {
 		the_vnet.cbToCoNet_vTxEvent(ev);
 	}
 
+	// if the network layer does not handle the event, put TX event to other parts.
 	if (!ev._network_handled) {
+		bool_t b_handled = true;
+		on_tx_comp(ev, b_handled);
+		
 		if (the_vapp) the_vapp.cbToCoNet_vTxEvent(ev);
 		if (the_vhw) the_vhw.cbToCoNet_vTxEvent(ev);
 		if (the_vsettings) { the_vsettings.cbToCoNet_vTxEvent(ev); }
@@ -561,7 +572,6 @@ void _MWX_vOnWakeup() {
 	Buttons._on_wakeup();
 }
 
-
 /**
  * @brief support function for printf_()
  * 
@@ -570,6 +580,15 @@ void _MWX_vOnWakeup() {
 void _putchar(char c) {
 	Serial << c;
 }
+
+/****************************************************************************/
+/***        OTEHR CALL BACKS                                             ***/
+/****************************************************************************/
+extern void on_rx_packet(mwx::packet_rx& pkt, bool_t &b_handled) __attribute__((weak));
+void on_rx_packet(mwx::packet_rx& pkt, bool_t &b_handled) { b_handled = false; }
+
+extern void on_tx_comp(mwx::packet_ev_tx& ev, bool_t &handled) __attribute__((weak));
+void on_tx_comp(mwx::packet_ev_tx& ev, bool_t &b_handled) { b_handled = false; }
 
 /****************************************************************************/
 /***        END OF FILE                                                   ***/

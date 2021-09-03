@@ -42,7 +42,8 @@ namespace mwx { inline namespace L1 {
 		}
 
 		~appdefs_virt() {
-			if (p_body) delete p_body; // note: only delete memory block, not calling destructor of created object
+			// so far, not assuming deleting this object.
+			// if (p_body) delete p_body; // note: only delete memory block, not calling destructor of created object
 									   // but to call unuse<T> explicitly.
 		}
 

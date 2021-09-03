@@ -176,6 +176,7 @@ namespace mwx { inline namespace L1 {
 		// manage tx completion status.
 		twenet_tx_cb_management tx_status;
 	};
-
-
 }}
+
+extern void on_tx_comp(mwx::packet_ev_tx& ev, bool_t &handled);
+extern void on_rx_packet(mwx::packet_rx& rx, bool_t &handled);
