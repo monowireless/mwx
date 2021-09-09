@@ -297,6 +297,12 @@ extern "C" void cbAppWarmStart(bool_t bAfterAhiInit)
 		u8TimerWakeUp = u8AHI_WakeTimerFiredStatus(); //  E_AHI_WAKE_TIMER_MASK_0 or  E_AHI_WAKE_TIMER_MASK_1
 	}
 	else {
+		// call the event at the very initial (only for board support, if option is set.)
+		uint32_t vapp_opt = mwx::appdefs_virt::OPT_EV_ON_EARLY_WAKEUP;
+		if (the_vhw && (the_vhw.get_opt_mask() & mwx::appdefs_virt::OPT_EV_ON_EARLY_WAKEUP)) {
+			the_vhw.on_event(_MWX_EV_ON_WAKEUP, vapp_opt);
+		}
+
 		// Serial should be re-initialize firstly.
 		Serial._on_wakeup();
 		Serial1._on_wakeup();
@@ -305,9 +311,15 @@ extern "C" void cbAppWarmStart(bool_t bAfterAhiInit)
 		_MWX_vOnWakeup();
 
 		// generate net/hw/app wakeup events
-		uint32_t vapp_opt = 0;
+		vapp_opt = 0;
 		for (auto x: _vcbs) {
-			if(*x) x->on_event(_MWX_EV_ON_WAKEUP, vapp_opt);
+			if(*x) {
+				if (x == &the_vhw && (x->get_opt_mask() & mwx::appdefs_virt::OPT_EV_ON_EARLY_WAKEUP)) {
+					; // already done
+				} else {
+					x->on_event(_MWX_EV_ON_WAKEUP, vapp_opt);
+				}
+			}
 		}
 
         // call back procedure for waking up.

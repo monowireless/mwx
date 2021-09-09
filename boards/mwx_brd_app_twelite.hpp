@@ -39,6 +39,20 @@ namespace mwx { inline namespace L1 {
 	private:
 		uint8_t _dipsw_bm;
 
+		void _init_pwm_ports() {
+            // relocate PWM pins (DO1/DO2)
+            vAHI_TimerSetLocation(E_AHI_TIMER_1, TRUE, TRUE); // DIO5, DO1, DO2, DIO8
+
+            Timer1.begin(1000, false, true);
+            Timer1.change_duty(1024);
+            Timer2.begin(1000, false, true);
+            Timer2.change_duty(1024);
+            Timer3.begin(1000, false, true);
+            Timer3.change_duty(1024);
+            Timer4.begin(1000, false, true);
+            Timer4.change_duty(1024);
+		}
+
 	public:
 		static const uint8_t TYPE_ID = mwx::BOARD::BRD_APPTWELITE;
 
@@ -92,17 +106,7 @@ namespace mwx { inline namespace L1 {
 
 		// begin method (if necessary, start object here)
 		void _begin() {
-            // relocate PWM pins (DO1/DO2)
-            vAHI_TimerSetLocation(E_AHI_TIMER_1, TRUE, TRUE); // DIO5, DO1, DO2, DIO8
-
-            Timer1.begin(1000, false, true);
-            Timer1.change_duty(1024);
-            Timer2.begin(1000, false, true);
-            Timer2.change_duty(1024);
-            Timer3.begin(1000, false, true);
-            Timer3.change_duty(1024);
-            Timer4.begin(1000, false, true);
-            Timer4.change_duty(1024);
+			_init_pwm_ports();
 		}
 
 	public:
@@ -114,13 +118,20 @@ namespace mwx { inline namespace L1 {
 		}
 
 		void on_sleep(uint32_t & val) {
+			pinMode(mwx::PIN_DIGITAL::DO0, PIN_MODE::OUTPUT_INIT_HIGH);
+			pinMode(mwx::PIN_DIGITAL::DO1, PIN_MODE::OUTPUT_INIT_HIGH);
 		}
 
 		void warmboot(uint32_t & val) { }
 		void wakeup(uint32_t & val) {
+			// OPT_EV_ON_EARLY_WAKEUP is set, so this wakeup() is called before hardware class object re-initialization (Timer1..4).
+			vAHI_TimerSetLocation(E_AHI_TIMER_1, TRUE, TRUE); // DIO5, DO1, DO2, DIO8
 		}
 
-		void on_create(uint32_t& val) { _setup();  }
+		void on_create(uint32_t& val) { 
+			_setup();
+			val = mwx::appdefs_virt::OPT_EV_ON_EARLY_WAKEUP; // request an wakeup event before hardware init.
+		}
 		void on_begin(uint32_t& val) { _begin(); }
 		void on_message(uint32_t& val) { }
 

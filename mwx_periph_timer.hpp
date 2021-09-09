@@ -153,11 +153,12 @@ namespace mwx { inline namespace L1 {
 		void _on_sleep() {
 			if (!_begun()) return;
 
+			// if started, keep this status.
 			if (_u8_state & STATE_STARTED_MASK) {
 				_u8_state |= STATE_WAKEUP_ON_START_MASK;
+				
+				_stop();
 			}
-
-			_stop();
 		}
 
 		/**
@@ -169,6 +170,7 @@ namespace mwx { inline namespace L1 {
 		 */
 		void _on_wakeup() {
 			if (_begun()) {
+				// if started before sleeping, re-start it.
 				if (_u8_state & STATE_WAKEUP_ON_START_MASK) {
 					_u8_state &= ~STATE_WAKEUP_ON_START_MASK;
 
@@ -205,21 +207,25 @@ namespace mwx { inline namespace L1 {
 		}
 
 		void _start() {
-			vAHI_TimerFineGrainDIOControl(_mwx_periph_u8_grain_gpio);
+			if (!(_u8_state & STATE_STARTED_MASK)) {
+				vAHI_TimerFineGrainDIOControl(_mwx_periph_u8_grain_gpio);
 
-			vTimerConfig(_psTimer);
-			vTimerStart(_psTimer);
+				vTimerConfig(_psTimer);
+				vTimerStart(_psTimer);
 
-			_u8_state |= STATE_STARTED_MASK; // started
-			// MWX_DebugMsg(0, "{Timer Start : %d}", _sTimer.u16ct_total);
+				_u8_state |= STATE_STARTED_MASK; // started
+				// MWX_DebugMsg(0, "{Timer Start : %d}", _sTimer.u16ct_total);
+			}
 			return;
 		}
 
 		void _stop() {
-			vTimerStop(_psTimer);
-			vTimerDisable(_psTimer);
+			if (_u8_state & STATE_STARTED_MASK) {
+				vTimerStop(_psTimer);
+				vTimerDisable(_psTimer);
 
-			_u8_state &= ~STATE_STARTED_MASK; // stopped
+				_u8_state &= ~STATE_STARTED_MASK; // stopped
+			}
 
 			return;
 		}

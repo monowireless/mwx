@@ -66,7 +66,8 @@ namespace mwx { inline namespace L1 {
 				
 				_the_instance = *p;
 				p->on_create(opt);
-
+				_the_instance.set_opt_mask(opt); // also passed option data to the instance.
+				
 				return *p;
 			} else {
 				MWX_Panic(2, "TIM::use() new instance can add only at setup().");
