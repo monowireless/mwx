@@ -1,0 +1,4 @@
+#pragma once
+
+#include "boards/mwx_brd_aria.hpp"
+using ARIA = mwx::BrdARIA;

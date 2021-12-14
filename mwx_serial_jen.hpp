@@ -1,6 +1,6 @@
-/* Copyright (C) 2019 Mono Wireless Inc. All Rights Reserved.    *
- * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
- * AGREEMENT).                                                   */
+/* Copyright (C) 2019-2021 Mono Wireless Inc. All Rights Reserved.  *
+ * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE      *
+ * AGREEMENT).                                                      */
 #pragma once
 
 #include <stdarg.h>
@@ -57,17 +57,37 @@ namespace mwx { inline namespace L1 {
 		} *_surr_obj;
 
 		// SURR_OBJ is use for Interactive mode. (this should be stored _psSer->uData.au8[4].)
-		static const uint8_t SURR_OBJ_PURPOSE_INTERACTIVE_MODE = 1;
+		static const uint8_t SURR_OBJ_PURPOSE_INTERACTIVE_MODE = 1; // Also used for Interactive mode
+		static const uint8_t SURR_OBJ_PURPOSE_OPTS_MASK = 0x80;
+		static const uint8_t SURR_OBJ_PURPOSE_OPT_FORCE_OUTPUT = 0x80; // Enable output while Interactive mode verbose.
 
 	private: 
+		// Access to Surrobj's usage data (uint8_t)
+		uint8& get_surrobj_purpose() {
+			return _psSer->uData.au8[4];
+		}
+
+		// Set the value to the usage data (uint8_t) of Surrobj.
+		// - SURR_OBJ_PURPOSE_OPT_FORCE_OUTPUT bit is cleared.
 		void set_surrobj_purpose(uint8 u8purpose) {
-			_psSer->uData.au8[4] = u8purpose;
+			get_surrobj_purpose() = u8purpose;
 		}
+
+		// Determine if the usage data (uint8_t) of Surrobj corresponds to the value of u8purpose.
 		bool is_surrobj_for(uint8 u8purpose) {
-			return _psSer->uData.au8[4] == u8purpose;
+			return (get_surrobj_purpose() & ~SURR_OBJ_PURPOSE_OPTS_MASK) == u8purpose;
 		}
+
+		// Determiune if nulification bit is set.
+		bool is_nullificate() { return (get_surrobj_purpose() & SURR_OBJ_PURPOSE_OPT_FORCE_OUTPUT); }
+
+		// Determine if the usage data (uint8_t) of Surrobj corresponds to the value of u8purpose.
 		static bool is_surrobj_for(TWE_tsFILE* psSer, uint8 u8purpose) {
-			return psSer->uData.au8[4] == u8purpose;
+			return (psSer->uData.au8[4] & ~SURR_OBJ_PURPOSE_OPTS_MASK) == u8purpose;
+		}
+
+		static bool is_nullificate(TWE_tsFILE* psSer) {
+			return (psSer->uData.au8[4] & SURR_OBJ_PURPOSE_OPT_FORCE_OUTPUT);
 		}
 		
 	public:
@@ -230,7 +250,7 @@ namespace mwx { inline namespace L1 {
 
 		inline size_t write(int n) {
 			if (_surr_obj) {
-				if (TWEINTRCT_bIsVerbose()) return 0;
+				if (TWEINTRCT_bIsVerbose() && !is_nullificate()) return 0;
 			}
 
 			return (int)SERIAL_bTxChar(_serdef._u8Port, n);
@@ -240,7 +260,9 @@ namespace mwx { inline namespace L1 {
 		static void vOutput(char out, void* vp) {			
 			TWE_tsFILE* fp = (TWE_tsFILE*)vp;
 			if (is_surrobj_for(fp, SURR_OBJ_PURPOSE_INTERACTIVE_MODE)
-					 && TWEINTRCT_bIsVerbose()) return;
+					 && TWEINTRCT_bIsVerbose()
+					 && !is_nullificate(fp)
+					 ) return;
 
 			fp->fp_putc(out, fp);
 		}
@@ -268,6 +290,35 @@ public:
 		void register_surrogate(SURR_OBJ *obj, uint8_t u8purpose = SURR_OBJ_PURPOSE_INTERACTIVE_MODE) {
 			_surr_obj = obj;
 			set_surrobj_purpose(u8purpose);
+		}
+
+		// [Internal use only]
+		// An object that sets a bit in surrobj_purpose. Clear the bit when discarded.
+		// This bit is used when using the Serial object in interactive mode.
+		class _SurrObjPurposeOpts {
+			uint8_t& _opt;
+			uint8_t _mask;
+		public:
+			_SurrObjPurposeOpts(uint8_t& opt, uint8_t mask) : _opt(opt), _mask(mask) {
+				_opt |= _mask;
+			}
+			~_SurrObjPurposeOpts() {
+				_opt &= ~_mask;
+			}
+		};
+		friend class _SurrObjPurposeOpts;
+
+		// [Internal use only]
+		// Object to output Serial in interactive mode
+		// A configuration object to force output to the Serial object in interactive mode, 
+		// which is created by using this function at the beginning of a function that uses 
+		// the Serial object. The setting is returned when the object is destroyed.
+		// note: Keep the return object while using the Serial object.
+		// note: When the old output API (code in twesettings) is called, it may behave in 
+		//  an unexpected way. Flush the output once, and then make this call before the 
+		//  Serial usage part.
+		_SurrObjPurposeOpts _force_Serial_out_during_intaractive_mode() {
+			return _SurrObjPurposeOpts(get_surrobj_purpose(), SURR_OBJ_PURPOSE_OPT_FORCE_OUTPUT);
 		}
 	};
 }}

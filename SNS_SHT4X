@@ -1,0 +1,4 @@
+#pragma once
+
+#include "sensors/mwx_sns_SHT4x.hpp"
+using SNS_SHT4x = mwx::SnsSHT4x;

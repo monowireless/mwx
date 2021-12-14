@@ -1,6 +1,6 @@
-/* Copyright (C) 2020 Mono Wireless Inc. All Rights Reserved.    *
- * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
- * AGREEMENT).                                                   */
+/* Copyright (C) 2020-2021 Mono Wireless Inc. All Rights Reserved. *
+ * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE     *
+ * AGREEMENT).                                                     */
 
 #include <TWELITE>
 
@@ -320,6 +320,7 @@ TWE_APIRET TWESTG_cbu32LoadSetting(TWE_tsBuffer *pBuf, uint8 u8kind, uint8 u8slo
  * \return コマンド依存の定義。TWE_APIRET_FAILの時は何らかの失敗。
  */
 TWE_APIRET TWEINTRCT_cbu32GenericHandler(TWEINTRCT_tsContext *pContext, uint32 u32Op, uint32 u32Arg1, uint32 u32Arg2, void *vpArg) {
+	auto force_Serial_out = Serial._force_Serial_out_during_intaractive_mode(); // force Serial output during interactive mode.
 	uint32 u32ApiRet = TWE_APIRET_SUCCESS;
 
 	switch (u32Op) {
@@ -339,7 +340,7 @@ TWE_APIRET TWEINTRCT_cbu32GenericHandler(TWEINTRCT_tsContext *pContext, uint32 u
 		break;
 
 	case E_TWEINRCT_OP_RESET: // モジュールリセットを行う
-		Serial << crlf << "!INF RESET SYSTEM...";
+		// Serial << crlf << "!INF RESET SYSTEM..."; // twesttings ライブラリから出力されるので不要
 		delay(100);
 
 		vAHI_SwReset();
@@ -453,16 +454,20 @@ typedef struct {
 
 void TWEINTCT_vSerUpdateScreen_hw(TWEINTRCT_tsContext *psIntr) {
 	TWEINTRCT_vSerHeadLine(psIntr, 0UL);
-	
-	Serial << crlf << "\033[7md\033[0m : DI status";
-	Serial << crlf << "\033[7mi\033[0m : probe i2c bus";
-	Serial << crlf << "\033[7mp\033[0m : PAL board EEPROM";
-	
-	Serial << crlf << crlf;
+
+	TWE_fprintf(_psSerial, 
+		"\r\n" "\033[7md\033[0m : DI status"
+		"\r\n" "\033[7mi\033[0m : probe i2c bus"
+		"\r\n" "\033[7mp\033[0m : PAL board EEPROM"
+		"\r\n" "\r\n" 
+	);
+
 	TWEINTRCT_vSerFootLine(psIntr, 0); // フッター行の表示
 }
 
 void TWEINTCT_vProcessInputByte_hw(TWEINTRCT_tsContext *psIntr, TWEINTRCT_tkeycode keycode) {
+	auto force_Serial_out = Serial._force_Serial_out_during_intaractive_mode(); // force Serial output during interactive mode.
+
 	bool_t bHandled = FALSE;
 	bool_t bForceRedraw = FALSE;
 	TWE_APIRET ret = 0;

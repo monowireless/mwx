@@ -23,6 +23,7 @@ APPSRC_CXX+=boards/mwx_brd_pal_notice.cpp
 APPSRC_CXX+=boards/mwx_brd_monostick.cpp
 APPSRC_CXX+=boards/mwx_brd_app_twelite.cpp
 APPSRC_CXX+=boards/mwx_brd_cue.cpp
+APPSRC_CXX+=boards/mwx_brd_aria.cpp
 
 APPSRC_CXX+=networks/mwx_nwk_simple.cpp
 
@@ -35,5 +36,6 @@ APPSRC+=sensors/legacy/BME280.c
 APPSRC_CXX+=sensors/legacy/probe.cpp
 APPSRC_CXX+=sensors/mwx_sns_MC3630.cpp
 APPSRC_CXX+=sensors/mwx_sns_PCA9632.cpp
+APPSRC_CXX+=sensors/mwx_sns_SHT4x.cpp
 
 APPSRC+=mwx_debug.c
