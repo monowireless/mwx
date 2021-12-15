@@ -340,7 +340,7 @@ TWE_APIRET TWEINTRCT_cbu32GenericHandler(TWEINTRCT_tsContext *pContext, uint32 u
 		break;
 
 	case E_TWEINRCT_OP_RESET: // モジュールリセットを行う
-		// Serial << crlf << "!INF RESET SYSTEM..."; // twesttings ライブラリから出力されるので不要
+		Serial << crlf << "!INF RESET SYSTEM...";
 		delay(100);
 
 		vAHI_SwReset();
