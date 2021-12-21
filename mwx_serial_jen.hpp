@@ -60,11 +60,15 @@ namespace mwx { inline namespace L1 {
 		static const uint8_t SURR_OBJ_PURPOSE_INTERACTIVE_MODE = 1; // Also used for Interactive mode
 		static const uint8_t SURR_OBJ_PURPOSE_OPTS_MASK = 0x80;
 		static const uint8_t SURR_OBJ_PURPOSE_OPT_FORCE_OUTPUT = 0x80; // Enable output while Interactive mode verbose.
+		static const uint8_t SURR_OBJ_IDX_DATASTORE = 3; // the index of tsSer->uData.au8[] where SURR_OBJ flag is stored.
 
 	private: 
 		// Access to Surrobj's usage data (uint8_t)
+		static uint8& get_surrobj_purpose(TWE_tsFILE* psSer) {
+			return psSer->uData.au8[SURR_OBJ_IDX_DATASTORE]; // use the last element to store flags.
+		}
 		uint8& get_surrobj_purpose() {
-			return _psSer->uData.au8[4];
+			return _psSer->uData.au8[SURR_OBJ_IDX_DATASTORE];
 		}
 
 		// Set the value to the usage data (uint8_t) of Surrobj.
@@ -83,11 +87,11 @@ namespace mwx { inline namespace L1 {
 
 		// Determine if the usage data (uint8_t) of Surrobj corresponds to the value of u8purpose.
 		static bool is_surrobj_for(TWE_tsFILE* psSer, uint8 u8purpose) {
-			return (psSer->uData.au8[4] & ~SURR_OBJ_PURPOSE_OPTS_MASK) == u8purpose;
+			return (get_surrobj_purpose(psSer) & ~SURR_OBJ_PURPOSE_OPTS_MASK) == u8purpose;
 		}
 
 		static bool is_nullificate(TWE_tsFILE* psSer) {
-			return (psSer->uData.au8[4] & SURR_OBJ_PURPOSE_OPT_FORCE_OUTPUT);
+			return (get_surrobj_purpose(psSer) & SURR_OBJ_PURPOSE_OPT_FORCE_OUTPUT);
 		}
 		
 	public:
