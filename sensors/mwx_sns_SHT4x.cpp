@@ -25,13 +25,13 @@ MWX_APIRET SnsSHT4x::process_ev( uint32_t arg1, uint32_t arg2){
 	
 	case E_EVENT_TICK_TIMER:
 		{
-			if(_aveilable){
+			if(_available){
 				count = 0;
 			}
 
 			if(count == 0 ){
-				if( !_aveilable ) {
-					_aveilable = _read();
+				if( !_available ) {
+					_available = _read();
 				}
 			}else{
 				count--;
@@ -42,13 +42,14 @@ MWX_APIRET SnsSHT4x::process_ev( uint32_t arg1, uint32_t arg2){
 	default:
 		break;
 	}
-	//return MWX_APIRET(0);
+	
+	return MWX_APIRET(true);
 }
 
 bool SnsSHT4x::begin(uint8_t mode) {
 	_mode = mode;
 
-	_aveilable = false;
+	_available = false;
 
 	uint8_t _addr = 0xF6;
 	_wait_ms = 5;
@@ -106,7 +107,7 @@ bool SnsSHT4x::begin(uint8_t mode) {
 }
 
 bool SnsSHT4x::available() {
-	return _aveilable;
+	return _available;
 }
 
 bool SnsSHT4x::_read() {
@@ -126,24 +127,4 @@ bool SnsSHT4x::_read() {
 	_hum = (int16_t)(-600 + ((12500*int32_t(_u16hum)) >> 16) );
 
 	return true;
-}
-
-double SnsSHT4x::get_temp() {
-	return _temp/100.0;
-}
-
-int16_t SnsSHT4x::get_temp_cent() {
-	return _temp;
-}
-
-double SnsSHT4x::get_humid() {
-	return _hum/100.0;
-}
-
-int16_t SnsSHT4x::get_humid_per_dmil() {
-	return _hum;
-}
-
-uint16_t SnsSHT4x::get_waittime_ms(){
-	return _wait_ms;
 }

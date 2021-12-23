@@ -28,7 +28,7 @@ namespace mwx {
 			 */
 			void setup(uint8_t i2c_addr = DEFAULT_I2C_ADDRESS) {
 				_i2c_addr = i2c_addr;
-				_aveilable = false;
+				_available = false;
 			}
 
 			/**
@@ -60,35 +60,36 @@ namespace mwx {
 			 * 
 			 * @return temperature
 			 */
-			double get_temp();
+
+			double get_temp() { return _temp/100.0; } 
 
 			/**
 			 * @brief get temperature
 			 * 
 			 * @return temperature
 			 */
-			int16_t get_temp_cent();
+			int16_t get_temp_cent() { return _temp; }
 
 			/**
 			 * @brief get humidity
 			 * 
 			 * @return humidity
 			 */
-			double get_humid();
+			double get_humid() { return _hum/100.0; }
 
 			/**
 			 * @brief get humidity
 			 * 
 			 * @return humidity
 			 */
-			int16_t get_humid_per_dmil();
+			int16_t get_humid_per_dmil() { return _hum; }
 
 			/**
 			 * @brief get measurement time(ms)
 			 * 
 			 * @return time(ms)
 			 */
-			uint16_t get_waittime_ms();
+			uint16_t get_waittime_ms() { return _wait_ms; }
 
 			/**
 			 * @brief process event
@@ -108,13 +109,13 @@ namespace mwx {
 			/**
 			 * @brief end measurement
 			 */
-			void end() { _aveilable = false; }
+			void end() { _available = false; }
 
 			void wakeup(){
 				if(!Wire._has_begun()) Wire.begin();
 
 				if(_read()){
-					_aveilable = true;
+					_available = true;
 				}
 			}
 
@@ -150,7 +151,7 @@ namespace mwx {
 			int16_t _hum;
 			uint16_t _wait_ms;
 			uint8_t _mode;
-			bool _aveilable;
+			bool _available;
 		};
 	}
 }
