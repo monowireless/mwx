@@ -74,7 +74,7 @@ void __MWX_APP_CLASS_NAME::cbTweNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemB
 		break;
 
 	case E_AHI_DEVICE_SYSCTRL:
-		#define __MWX_EVENT_HANDLER(n) if (u32ItemBitmap && (1UL << n))  { event_dio_handler<n>(n); }
+		#define __MWX_EVENT_HANDLER(n) if (u32ItemBitmap & (1UL << n))  { event_dio_handler<n>(n); }
 		__MWX_EVENT_HANDLER(0)
 		__MWX_EVENT_HANDLER(1)
 		__MWX_EVENT_HANDLER(2)
