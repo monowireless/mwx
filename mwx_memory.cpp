@@ -65,6 +65,16 @@ namespace std {
     void __throw_bad_function_call() {;}
 }
 
+// for EASTL
+void* operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line) {
+  return new uint8_t[size];
+}
+
+// for EASTL
+void* operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line) {
+  return new uint8_t[size];
+}
+
 #if 0
 void mwx_static_init()
 {

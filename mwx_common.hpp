@@ -3,6 +3,10 @@
  * AGREEMENT).                                                   */
 #pragma once
 
+/* NOTE: This file is include very early of includes, so those definitions here
+ * should be independent from following libraries.
+ */
+
 // architecture check
 #if defined(JENNIC_CHIP)
 # define __TWELITE__
@@ -23,8 +27,13 @@ typedef uint8_t boolean;
 #define NULL nullptr
 #endif
 
+#include <utility>
+
 // generic API returns
 namespace mwx { inline namespace L1 {
+	/**
+	 * @brief API returns values with success/fail and 31bits data.
+	 */
 	class MWX_APIRET {
 		uint32_t _code;
 	public:
@@ -44,4 +53,21 @@ namespace mwx { inline namespace L1 {
 		inline operator uint32_t() const { return get_value(); }
 		inline operator bool() const { return is_success(); }
 	};
+
+	/**
+	 * @brief placement new syntax helper.
+	 *
+	 *  Typical placement new description is like below:
+	 *    sometype obj;
+	 *    new (&obj) sometype(arg1, arg2);
+	 *   
+	 *  This template funcion makes it as below.
+	 *    sometype obj;
+	 *    pnew(pbj, arg1, arg2); 
+	 * 
+	 */
+	template <class T, class... Args>
+	T* pnew(T& obj, Args&&... args) {
+		return (T*)new ((void*)&obj) T(std::forward<Args&&>(args)...);
+	}
 }}
