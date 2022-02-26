@@ -74,7 +74,7 @@
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/
 
-PRIVATE bool_t bSMBusWait(void);
+static bool_t bSMBusWait(void);
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/
@@ -88,22 +88,32 @@ PRIVATE bool_t bSMBusWait(void);
 /***        Exported Functions                                            ***/
 /****************************************************************************/
 
-PUBLIC void vSMBusInit(void)
+void vSMBusInit(void)
 {
 
-#ifdef SWING
-	vAHI_SiSetLocation(TRUE);
-#endif
-
 	/* run bus at 100KHz */
-	vAHI_SiMasterConfigure(TRUE, FALSE, 7);
+	vAHI_SiMasterConfigure(TRUE, FALSE, 31);
 			// 16/[(PreScaler + 1) x 5]MHz
-			//		--> 31:100KHz, 7:400KHz
+			//		--> 31:100KHz, 7:400KHz, 47:66Khz
 
 }
 
+void vSMBusInit_setClk(uint32 u32Clk)
+{
+	/* convert clock to clock devisor */
+	if (u32Clk > 255) {
+		u32Clk = (3200000UL / u32Clk) - 1;
+	}
+	if (u32Clk < 7 || u32Clk > 255) u32Clk = 31; // set 100kHz
 
-PUBLIC bool_t bSMBusWrite(uint8 u8Address, uint8 u8Command, uint8 u8Length, uint8* pu8Data)
+	/* run bus at specified value */
+	vAHI_SiMasterConfigure(TRUE, FALSE, u32Clk);
+			// 16/[(PreScaler + 1) x 5]MHz
+			//		--> 31:100KHz, 7:400KHz, 47:66Khz
+}
+
+
+bool_t bSMBusWrite(uint8 u8Address, uint8 u8Command, uint8 u8Length, uint8* pu8Data)
 {
 
 	bool_t bCommandSent = FALSE;

@@ -39,9 +39,6 @@
 
 #define MENU_CONFIG 1 // 設定モード
 
-// Application Specific
-#define APPVER				((VERSION_MAIN << 24) | (VERSION_SUB << 16) | (VERSION_VAR << 8))
-
 /**********************************************************************************
  * FUNCTION PROTOTYPES
  **********************************************************************************/
@@ -253,7 +250,7 @@ static void s_appLoadData(uint8 u8kind, uint8 u8slot, bool_t bNoLoad) {
 	// tsFinal 構造体の初期化
 	TWESTG_INIT_FINAL(SET_STD, &sFinal);
 	// tsFinal 構造体に基本情報を適用する
-	TWESTG_u32SetBaseInfoToFinal(&sFinal, INTRCT_USER_APP_ID, APPVER, STGS_SET_VER, STGS_SET_VER_COMPAT);
+	TWESTG_u32SetBaseInfoToFinal(&sFinal, INTRCT_USER_APP_ID, INTRCT_USER_APP_VER, STGS_SET_VER, STGS_SET_VER_COMPAT);
 	// tsFinal 構造体に kind, slot より、デフォルト設定リストを構築する
 	TWESTG_u32SetSettingsToFinal(&sFinal, u8kind, u8slot, pSetList);
 	// セーブデータがあればロードする
@@ -586,7 +583,7 @@ void TWEINTCT_vProcessInputByte_hw(TWEINTRCT_tsContext *psIntr, TWEINTRCT_tkeyco
 						Serial << format("%02X ", *np);	
 					}
 
-					uint8_t u8EEPcrc = G_OCTET(np);
+					uint8_t u8EEPcrc = G_BYTE(np);
 					uint8_t u8crc = CRC8_u8Calc(u8Data+5, sPALData.u8OptionLength + 5);
 					if (u8crc != u8EEPcrc) {
 						Serial << crlf << format("  <CRC ERROR %02X:%02X>", u8EEPcrc, u8crc);
@@ -641,6 +638,8 @@ namespace mwx { inline namespace L1 {
 		MWX_DebugMsg(DEBUG_LVL, "_setup()\r\n");
 		// load initial data
 		//s_appLoadData(0x00, 0xFF, FALSE);
+
+		MWX_Set_User_App_Ver(); // Load Application Version.
 
 		// Serial surrogate
 		_ser_surr.pobj = (void*)&this->serial;

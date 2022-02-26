@@ -208,10 +208,12 @@ namespace mwx { inline namespace L1 {
 					v = _i16Adc[s];
 			}
 
-			if (s < 4) { // ADC1..4
+			if (v == ADC_VAL_NOT_YET) return int16_t(v);
+
+			if (s <= PIN_ANALOGUE::A4) { // ADC1..4
 				v = v * 2470 / 1024;
 			}
-			else if (s == 4) {
+			else if (s == PIN_ANALOGUE::VCC) {
 				v = v * 3705 >> 10;
 			}
 

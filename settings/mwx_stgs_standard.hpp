@@ -6,9 +6,11 @@
 #include "../_tweltite.hpp"
 #include "../mwx_utils_smplque.hpp"
 #include "mwx_settings.hpp"
+#include "mwx_stgs_standard_enum.hpp"
 #include "mwx_stgs_standard_core.h"
 
 namespace mwx { inline namespace L1 {
+	extern uint32_t __APP_VER;
 
 	class StgsStandard : MWX_APPDEFS_CRTP(StgsStandard)
 	{

@@ -26,6 +26,7 @@ APPSRC_CXX+=boards/mwx_brd_cue.cpp
 APPSRC_CXX+=boards/mwx_brd_aria.cpp
 
 APPSRC_CXX+=networks/mwx_nwk_simple.cpp
+APPSRC_CXX+=networks/mwx_nwk_layered.cpp
 
 APPSRC+=sensors/legacy/SMBus.c
 APPSRC+=sensors/legacy/sensor_driver.c

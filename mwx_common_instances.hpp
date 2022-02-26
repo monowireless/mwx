@@ -23,10 +23,12 @@
 extern mwx::serial_jen Serial, Serial1;
 extern mwx::serial_parser<mwx::alloc_heap<uint8_t>> SerialParser;
 
-extern mwx::periph_twowire<MWX_TWOWIRE_BUFF> Wire;
+extern mwx::periph_twowire Wire;
+
 extern mwx::periph_spi SPI;
 extern mwx::periph_buttons Buttons;
 extern mwx::periph_analogue Analogue;
+
 extern mwx::periph_pulse_counter PulseCounter0;
 extern mwx::periph_pulse_counter PulseCounter1;
 extern mwx::periph_pulse_counter& PulseCounter;
@@ -41,6 +43,7 @@ extern mwx::periph_timer Timer4;
 extern mwx::appdefs_virt the_vapp;
 extern mwx::appdefs_virt the_vhw;
 extern mwx::appdefs_virt the_vnet;
+extern mwx::appdefs_virt the_vnet2;
 extern mwx::appdefs_virt the_vsettings;
 
 extern mwx::twenet_mac the_mac;

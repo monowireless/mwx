@@ -1,4 +1,11 @@
-﻿﻿# The MWX Library
+﻿---
+title: The MWX Library
+author: © Mono Wireless Inc.
+date: 2022/01/31
+---
+
+﻿# The MWX Library
+
 Mono Wireless C++ Library for TWELITE.
 
 

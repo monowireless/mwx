@@ -102,14 +102,16 @@ mwx::appdefs_virt the_vhw;
  * virtualized network(CTweNetCbs) instance
  */
 mwx::appdefs_virt the_vnet;
+mwx::appdefs_virt the_vnet2;
 
 /** @brief	The maximum vcbs */
-static const int _MAX_VCBS = 4;
+static const int _MAX_VCBS = 5;
 /** @brief	The vcbs index application */
 static const int _vcbs_idx_net = 0;
 static const int _vcbs_idx_app = 1;
 static const int _vcbs_idx_hw = 2;
 static const int _vcbs_idx_settings = 3;
+static const int _vcbs_idx_net2 = 4;
 /** @brief	callback handler table (app & hw) */
 static mwx::appdefs_virt* _vcbs[_MAX_VCBS];
 
@@ -136,7 +138,7 @@ tsFILE _sSerLegacy;
 /**
  * Two wire object
  */
-mwx::periph_twowire<MWX_TWOWIRE_BUFF> Wire;
+mwx::periph_twowire Wire;
 
 /**
  * SPI object
@@ -216,39 +218,43 @@ extern "C" void cbAppColdStart(bool_t bAfterAhiInit)
 
 		// new instances (constuctor of global instance is not called with current compiler settings.)
 		//   note: do not call hardware related API during construction.
-		(void)new ((void*)&the_twelite) mwx::twenet();
+		mwx::pnew(the_twelite);
 
-		(void)new ((void*)&the_vapp) mwx::appdefs_virt();
-		(void)new ((void*)&the_vsettings) mwx::appdefs_virt();
-		(void)new ((void*)&the_vhw) mwx::appdefs_virt();
-		(void)new ((void*)&the_vnet) mwx::appdefs_virt();
+		mwx::pnew(the_vapp);
+		mwx::pnew(the_vsettings);
+		mwx::pnew(the_vhw);
+		mwx::pnew(the_vnet);
+		mwx::pnew(the_vnet2);
 
 		_vcbs[0] = &the_vnet; // fistly handled to intercept net events.
 		_vcbs[1] = &the_vhw;
 		_vcbs[2] = &the_vapp;
 		_vcbs[3] = &the_vsettings;
+		_vcbs[4] = &the_vnet2; // fistly handled to intercept net events.
+
+		mwx::pnew(Serial, E_AHI_UART_0);
+		mwx::pnew(Serial1, E_AHI_UART_1);
+
+		mwx::pnew(SerialParser);
 		
-		(void)new ((void*)&Serial) mwx::serial_jen(E_AHI_UART_0);
-		(void)new ((void*)&Serial1) mwx::serial_jen(E_AHI_UART_1);
+		mwx::pnew(Wire);
 
-		(void)new ((void*)&SerialParser) mwx::serial_parser<mwx::alloc_heap<uint8_t>>();
-		
-		(void)new ((void*)&Wire) mwx::periph_twowire<MWX_TWOWIRE_BUFF>();
-		(void)new ((void*)&SPI) mwx::periph_spi();
+		mwx::pnew(SPI);
 
-		(void)new ((void*)&Analogue) mwx::periph_analogue();
-		(void)new ((void*)&PulseCounter0) mwx::periph_pulse_counter(mwx::periph_pulse_counter::DEVICE_PC0);
-		(void)new ((void*)&PulseCounter1) mwx::periph_pulse_counter(mwx::periph_pulse_counter::DEVICE_PC1);
+		mwx::pnew(Analogue);
 
-		(void)new ((void*)&Timer0) mwx::periph_timer(mwx::periph_timer::TIMER_0);
-		(void)new ((void*)&Timer1) mwx::periph_timer(mwx::periph_timer::TIMER_1);
-		(void)new ((void*)&Timer2) mwx::periph_timer(mwx::periph_timer::TIMER_2);
-		(void)new ((void*)&Timer3) mwx::periph_timer(mwx::periph_timer::TIMER_3);
-		(void)new ((void*)&Timer4) mwx::periph_timer(mwx::periph_timer::TIMER_4);
+		mwx::pnew(PulseCounter0, mwx::periph_pulse_counter::DEVICE_PC0);
+		mwx::pnew(PulseCounter1, mwx::periph_pulse_counter::DEVICE_PC1);
 
-		(void)new ((void*)&Buttons) mwx::periph_buttons();
+		mwx::pnew(Timer0, 0); //mwx::periph_timer::TIMER_0);
+		mwx::pnew(Timer1, 1); //mwx::periph_timer::TIMER_1);
+		mwx::pnew(Timer2, 2); //mwx::periph_timer::TIMER_2);
+		mwx::pnew(Timer3, 3); //mwx::periph_timer::TIMER_3);
+		mwx::pnew(Timer4, 4); //mwx::periph_timer::TIMER_4);
 
-		(void)new ((void*)&the_mac) mwx::twenet_mac();
+		mwx::pnew(Buttons);
+
+		mwx::pnew(the_mac);
 
 		// some settings
 		_toconet_tx_u8_init_queue_flag = 0x01; // clean TX QUEUE on wakeup
@@ -368,8 +374,11 @@ extern "C" void cbToCoNet_vNwkEvent(teEvent eEvent, uint32 u32arg) {
 	if (the_vnet) {
 		the_vnet.cbToCoNet_vNwkEvent(ev);
 	}
+	if(the_vnet2 && !ev._network_handled) {
+		the_vnet2.cbToCoNet_vNwkEvent(ev);
+	}
 
-	if (!ev._network_handled) {
+	if (ev._network_handled) {
 		if (the_vapp) the_vapp.cbToCoNet_vNwkEvent(ev);
 		if (the_vhw) the_vhw.cbToCoNet_vNwkEvent(ev);
 	}
@@ -378,20 +387,22 @@ extern "C" void cbToCoNet_vNwkEvent(teEvent eEvent, uint32 u32arg) {
 extern "C" void cbToCoNet_vRxEvent(tsRxDataApp *pRx) {
 	mwx::packet_rx rx(pRx);
 
-	rx._network_handled = false;
+	rx._network_handled = false; // if the_vnet accepts the packet, set true and the packet should be passed to the app.
 
 	if (the_vnet) {
 		the_vnet.cbToCoNet_vRxEvent(rx);
 	}
-
-	if (!rx._network_handled) {
+	if(the_vnet2 && !rx._network_handled) {
+		the_vnet2.cbToCoNet_vRxEvent(rx);
+	}
+	if (rx._network_handled) {
 		if (the_vapp) {
 			the_vapp.cbToCoNet_vRxEvent(rx);
 		}
 		else {
 			bool_t b_handled = true; // default, handled
 
-			// call defailt function
+			// call default function
 			on_rx_packet(rx, b_handled);
 
 			// if app is not defined, use receiver instead.
@@ -548,6 +559,7 @@ void _MWX_vOnSleep() {
 
 	Wire._on_sleep();
 	Analogue._on_sleep();
+
 	PulseCounter0._on_sleep();
 	PulseCounter1._on_sleep();
 
@@ -571,7 +583,7 @@ void _MWX_vOnSleep() {
 void _MWX_vOnWakeup() {
 	Wire._on_wakeup();
 	Analogue._on_wakeup();
-	
+
 	PulseCounter0._on_wakeup();
 	PulseCounter1._on_wakeup();
 

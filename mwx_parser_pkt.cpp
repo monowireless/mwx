@@ -141,38 +141,38 @@ E_PKT TwePacketTwelite::parse(const uint8_t* pyld, uint16_t u16len) {
 	int c;
 
 	// read
-	u8addr_src = G_OCTET(pyld); 					// addr src (LID)
+	u8addr_src = G_BYTE(pyld); 					// addr src (LID)
 
-	c = G_OCTET(pyld); // 0x81
+	c = G_BYTE(pyld); // 0x81
 
-	c = G_OCTET(pyld); // packet identified (need AppID to calculate)
+	c = G_BYTE(pyld); // packet identified (need AppID to calculate)
 
-	c = G_OCTET(pyld); // protocol version
+	c = G_BYTE(pyld); // protocol version
 
-	u8lqi = G_OCTET(pyld); 							// LQI
+	u8lqi = G_BYTE(pyld); 							// LQI
 
 	u32addr_src = G_DWORD(pyld); 					// SerID
 
-	u8addr_dst = G_OCTET(pyld); 					// addr dst (LID)
+	u8addr_dst = G_BYTE(pyld); 					// addr dst (LID)
 
 	c = G_WORD(pyld);								// timestamp&low latency flag
 	u16timestamp = c & 0x7FFF;								// -time stamp
 	b_lowlatency_tx = ((c & 0x8000) == 0x8000);				// -low latency flag
 
-	u8rpt_cnt = G_OCTET(pyld);					 	// repeat count
+	u8rpt_cnt = G_BYTE(pyld);					 	// repeat count
 
 	u16Volt = (short)G_WORD(pyld);					// module voltage
 
-	c = G_OCTET(pyld);								// unused
+	c = G_BYTE(pyld);								// unused
 
-	c = G_OCTET(pyld);								// DI state bit
+	c = G_BYTE(pyld);								// DI state bit
 	DI1 = ((c & 0x01) == 0x01);
 	DI2 = ((c & 0x02) == 0x02);
 	DI3 = ((c & 0x04) == 0x04);
 	DI4 = ((c & 0x08) == 0x08);
 	DI_mask = c;
 
-	c = G_OCTET(pyld);								// DI active state bit
+	c = G_BYTE(pyld);								// DI active state bit
 	DI1_active = ((c & 0x01) == 0x01);
 	DI2_active = ((c & 0x02) == 0x02);
 	DI3_active = ((c & 0x04) == 0x04);
@@ -180,15 +180,15 @@ E_PKT TwePacketTwelite::parse(const uint8_t* pyld, uint16_t u16len) {
 	DI_active_mask = c;
 
 	Adc_active_mask = 0;									// ADC
-	u16Adc1 = G_OCTET(pyld);
+	u16Adc1 = G_BYTE(pyld);
 	if (u16Adc1 != 0xFF) Adc_active_mask |= 1; else u16Adc1 = 0xFFFF;
-	u16Adc2 = G_OCTET(pyld);
+	u16Adc2 = G_BYTE(pyld);
 	if (u16Adc2 != 0xFF) Adc_active_mask |= 2; else u16Adc2 = 0xFFFF;
-	u16Adc3 = G_OCTET(pyld);
+	u16Adc3 = G_BYTE(pyld);
 	if (u16Adc3 != 0xFF) Adc_active_mask |= 4; else u16Adc3 = 0xFFFF;
-	u16Adc4 = G_OCTET(pyld);
+	u16Adc4 = G_BYTE(pyld);
 	if (u16Adc4 != 0xFF) Adc_active_mask |= 8; else u16Adc4 = 0xFFFF;
-	c = G_OCTET(pyld);
+	c = G_BYTE(pyld);
 
 	if (u16Adc1 != 0xFFFF) u16Adc1 = ((u16Adc1 * 4 + ((c >> 0) & 0x3)) * 4); // additional two bits
 	if (u16Adc2 != 0xFFFF) u16Adc2 = ((u16Adc2 * 4 + ((c >> 2) & 0x3)) * 4);
@@ -234,25 +234,25 @@ E_PKT TwePacketAppIO::parse(const uint8_t* pyld, uint16_t u16len) {
 	int c;
 
 	// read
-	u8addr_src = G_OCTET(pyld); 					// addr src
+	u8addr_src = G_BYTE(pyld); 					// addr src
 
-	c = G_OCTET(pyld); // 0x81
+	c = G_BYTE(pyld); // 0x81
 
-	c = G_OCTET(pyld); // packet identified (need AppID to calculate)
+	c = G_BYTE(pyld); // packet identified (need AppID to calculate)
 
-	c = G_OCTET(pyld); // protocol version
+	c = G_BYTE(pyld); // protocol version
 
-	u8lqi = G_OCTET(pyld); 							// LQI
+	u8lqi = G_BYTE(pyld); 							// LQI
 
 	u32addr_src = G_DWORD(pyld); 					// SerID
 
-	u8addr_dst = G_OCTET(pyld); 					// addr dst (LID)
+	u8addr_dst = G_BYTE(pyld); 					// addr dst (LID)
 
 	c = G_WORD(pyld);								// timestamp&low latency flag
 	u16timestamp = c & 0x7FFF;								// -time stamp
 	b_lowlatency_tx = ((c & 0x8000) == 0x8000);				// -low latency flag
 
-	u8rpt_cnt = G_OCTET(pyld);					 	// repeat count
+	u8rpt_cnt = G_BYTE(pyld);					 	// repeat count
 
 	DI_mask = G_WORD(pyld);
 	DI_active_mask = G_WORD(pyld);
@@ -291,17 +291,17 @@ E_PKT TwePacketAppUART::parse(const uint8_t* pyld, uint16_t u16len) {
 	int c;
 
 	// read
-	DataAppUART::u8addr_src = G_OCTET(pyld); 					// addr src
+	DataAppUART::u8addr_src = G_BYTE(pyld); 					// addr src
 
-	c = G_OCTET(pyld); // 0xA0
+	c = G_BYTE(pyld); // 0xA0
 	if (!(c == 0xA0 || c == 0xAA)) return E_PKT::PKT_ERROR;
 
-	DataAppUART::u8response_id = G_OCTET(pyld);
+	DataAppUART::u8response_id = G_BYTE(pyld);
 
 	DataAppUART::u32addr_src = G_DWORD(pyld); 					// SerID
 	DataAppUART::u32addr_dst = G_DWORD(pyld); 					// SerID
 
-	DataAppUART::u8lqi = G_OCTET(pyld); 							// LQI
+	DataAppUART::u8lqi = G_BYTE(pyld); 							// LQI
 
 	DataAppUART::u16paylen = G_WORD(pyld);
 
@@ -351,7 +351,7 @@ E_PKT TwePacketAppTAG::parse(const uint8_t* pb, uint16_t u16len) {
 	DataAppTAG::u32addr_rpt = G_DWORD(p);
 
 	// LQI value
-	DataAppTAG::u8lqi = G_OCTET(p);
+	DataAppTAG::u8lqi = G_BYTE(p);
 
 	// sequence number
 	DataAppTAG::u16seq = G_WORD(p);
@@ -360,16 +360,16 @@ E_PKT TwePacketAppTAG::parse(const uint8_t* pb, uint16_t u16len) {
 	DataAppTAG::u32addr_src = G_DWORD(p);
 
 	// src address (8bit)
-	DataAppTAG::u8addr_src = G_OCTET(p);
+	DataAppTAG::u8addr_src = G_BYTE(p);
 
 	// 0x80 fixed
-	DataAppTAG::u8sns = G_OCTET(p);
+	DataAppTAG::u8sns = G_BYTE(p);
 	if (c == 0x80) {
 		return E_PKT::PKT_ERROR;
 	}
 
 	// volt
-	DataAppTAG::u16Volt = DecodeVolt(G_OCTET(p));
+	DataAppTAG::u16Volt = DecodeVolt(G_BYTE(p));
 
 	// rest of bytes
 	if (p < e) {
@@ -411,7 +411,7 @@ E_PKT TwePacketPal::parse(const uint8_t* pb, uint16_t u16len) {
 	u32addr_rpt = G_DWORD(p);
 
 	// LQI value
-	u8lqi = G_OCTET(p);
+	u8lqi = G_BYTE(p);
 
 	// sequence number
 	u16seq = G_WORD(p);
@@ -420,23 +420,23 @@ E_PKT TwePacketPal::parse(const uint8_t* pb, uint16_t u16len) {
 	u32addr_src = G_DWORD(p);
 
 	// src address (8bit)
-	u8addr_src = G_OCTET(p);
+	u8addr_src = G_BYTE(p);
 
 	// 0x80 fixed
-	c = G_OCTET(p);
+	c = G_BYTE(p);
 	if (c != 0x80) {
 		return E_PKT::PKT_ERROR;
 	}
 
 	// PAL pcb
-	c = G_OCTET(p);
+	c = G_BYTE(p);
 	u8palpcb = (E_PAL_PCB)(c & 0x1F);
 	c >>= 5;
 	c = ((c & 1) << 2) | (c & 2) | ((c & 4) >> 2);
 	u8palpcb_rev = c; // revision (upper 4bits)
 
 	// num of sensors
-	u8sensors = G_OCTET(p);
+	u8sensors = G_BYTE(p);
 
 	// save this ptr (to calculate sensor data length)
 	const uint8_t* psensor = p;
@@ -449,10 +449,10 @@ E_PKT TwePacketPal::parse(const uint8_t* pb, uint16_t u16len) {
 		if (e < p + 4) { break; }
 
 		// check headers
-		uint8_t u8dt = G_OCTET(p); (void)u8dt;
-		uint8_t u8ds = G_OCTET(p); (void)u8ds;
-		uint8_t u8ex = G_OCTET(p); (void)u8ex;
-		uint8_t u8ln = G_OCTET(p);
+		uint8_t u8dt = G_BYTE(p); (void)u8dt;
+		uint8_t u8ds = G_BYTE(p); (void)u8ds;
+		uint8_t u8ex = G_BYTE(p); (void)u8ex;
+		uint8_t u8ln = G_BYTE(p);
 
 		// check payload len
 		if (e < p + u8ln) { break; }
@@ -469,7 +469,7 @@ E_PKT TwePacketPal::parse(const uint8_t* pb, uint16_t u16len) {
 	} else {
 		// perform checksum check
 		uint8_t u8crc = CRC8_u8Calc(pb, (uint8_t)(p - pb));
-		uint8_t c = G_OCTET(p);
+		uint8_t c = G_BYTE(p);
 		if (c != u8crc) bErr = true;
 	}
 
@@ -523,10 +523,10 @@ uint32_t TwePacketPal::store_data(const uint8_t *psns, const uint8_t *psns_end, 
 	const uint8_t* p = psns;
 	
 	for (int i = 0; i < u8sensors; i++) {
-		uint8_t u8dt = G_OCTET(p);
-		uint8_t u8ds = G_OCTET(p);
-		uint8_t u8ex = G_OCTET(p);
-		uint8_t u8ln = G_OCTET(p);
+		uint8_t u8dt = G_BYTE(p);
+		uint8_t u8ds = G_BYTE(p);
+		uint8_t u8ex = G_BYTE(p);
+		uint8_t u8ln = G_BYTE(p);
 
 		const uint8_t* pNext = p + u8ln;
 		if (pNext - 1 >= psns_end) break; // fatal error, data end mismatches.
@@ -548,7 +548,7 @@ uint32_t TwePacketPal::store_data(const uint8_t *psns, const uint8_t *psns_end, 
 					// match!
 					switch (u8dt & 0x03) {
 					case 0: case 3: // char
-						for (uint8_t k = 0; k < u8ln; k++) ((uint8_t*)vars[j])[k] = G_OCTET(p);
+						for (uint8_t k = 0; k < u8ln; k++) ((uint8_t*)vars[j])[k] = G_BYTE(p);
 						break;
 					case 1: // short 
 						for (uint8_t k = 0; k < u8ln/sizeof(uint16_t); k++) ((uint16_t*)vars[j])[k] = G_WORD(p);

@@ -1,8 +1,8 @@
 #pragma once
 
-/* Copyright (C) 2020 Mono Wireless Inc. All Rights Reserved.    *
- * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
- * AGREEMENT).                                                   */
+/* Copyright (C) 2020-2021 Mono Wireless Inc. All Rights Reserved. *
+ * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE     *
+ * AGREEMENT).                                                     */
 
 #include "twecommon.h"
 #include "twesettings.h"
@@ -14,6 +14,23 @@
 #include "tweinteractive.h"
 
 #include "mwx_debug.h"
+
+/***************************************************************
+ * NOTE: C linkage
+ **************************************************************/
+#ifdef __cplusplus
+extern "C" {
+#endif // C++
+
+/**
+ * the application version
+ */
+extern uint32_t INTRCT_USER_APP_VER;
+
+/**
+ * User App's callback to set APP_ID.
+ */
+extern void MWX_Set_User_App_Ver();
 
 /**
  * the app name
@@ -36,27 +53,12 @@ extern uint8_t SETSTD_CUST_COMMON[SIZE_SETSTD_CUST_COMMON];
 #ifndef SIZE_SET_STD_DEFSETS // if you want to put bigger settings table, increase.
 # define SIZE_SET_STD_DEFSETS 16
 #endif
+
 /**
  * the setting master table
  */
 extern const TWESTG_tsElement SET_STD_DEFSETS[SIZE_SET_STD_DEFSETS];
 
-// 
-enum class E_STGSTD_SETID {
-	APPID = E_TWESTG_DEFSETS_APPID,
-	LOGICALID = E_TWESTG_DEFSETS_LOGICALID,
-	CHANNEL = E_TWESTG_DEFSETS_CHANNEL,
-	CHANNELS_3 = E_TWESTG_DEFSETS_CHANNELS_3,
-	POWER_N_RETRY = E_TWESTG_DEFSETS_POWER_N_RETRY,
-	OPTBITS = E_TWESTG_DEFSETS_OPTBITS,
-	UARTBAUD = E_TWESTG_DEFSETS_UARTBAUD,
-	
-	OPT_DWORD2 = E_TWESTG_DEFSETS_OPT_DWORD1,
-	OPT_DWORD3 = E_TWESTG_DEFSETS_OPT_DWORD2,
-	OPT_DWORD4 = E_TWESTG_DEFSETS_OPT_DWORD3,
-
-    ENC_MODE = 0x20,
-    ENC_KEY_STRING,
-
-	VOID = 0xFF,
-};
+#ifdef __cplusplus
+}
+#endif // C++

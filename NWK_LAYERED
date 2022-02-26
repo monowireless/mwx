@@ -1,0 +1,5 @@
+#pragma once
+
+// include network defs.
+#include "networks/mwx_nwk_layered.hpp"
+using NWK_LAYERED = mwx::NwkLayered;

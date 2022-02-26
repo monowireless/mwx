@@ -12,7 +12,6 @@
 #include "../mwx_utils_payload.hpp"
 
 #include "ToCoNet_mod_DuplicateChecker.h"
-extern "C" void ToCoNet_vReg_mod_DupChk();
 
 /*****************************************************************/
 namespace mwx {
@@ -137,7 +136,7 @@ MWX_APIRET NwkSimple::transmit(packet_tx_nwk_simple<NwkSimple>& pkt) {
 		pkt.get_psTxDataApp()->u8Cmd = _config.get_pkt_cmd_part();
 
 		// callback id
-		pkt.get_psTxDataApp()->u8CbId = ++_u8cbid & CBID_MASK;
+		pkt.get_psTxDataApp()->u8CbId = the_mac.request_cbid() & CBID_MASK;
 
 		// set secure flag
 		if(_config.is_mode_pkt_encrypt()) {
@@ -169,14 +168,14 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 	uint8_t u8Rpt = 0;
 
 	rx._network_type = _config.u8Type;
-	rx._network_handled = 1;
+	rx._network_handled = false;
 
 	if (_config.u8Type == NETWORK::SIMPLE) {
 		// if cmd is not _config.u8cmd, the packet is networkless or another network.
 		if (rx.get_psRxDataApp()->u8Cmd != _config.get_pkt_cmd_part()) {
 			if (_config.bRcvNwkLess) {
-				// receive networkless packet
-				rx._network_handled = 0;
+				// accepting networkless packet
+				rx._network_handled = true;
 				rx._network_type = NETWORK::NONE;
 
 				rx.get_payload().attach(pRx->auData, pRx->u8Len, pRx->u8Len);
@@ -289,7 +288,7 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 			}
 
 			// call back id
-			pkt_rpt.get_psTxDataApp()->u8CbId = (++_u8cbid_rpt & CBID_MASK) + (CBID_MASK + 1); // set Higher bit for repeating packet.
+			pkt_rpt.get_psTxDataApp()->u8CbId = (the_mac.request_cbid_sys() & CBID_MASK) + (CBID_MASK + 1); // set Higher bit for repeating packet.
 
 			the_mac.transmit(pkt_rpt);
 		}
@@ -303,7 +302,7 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 			rx._set_addr_src_lid(u8AddrSrc_Lid);
 
 			rx.get_payload().attach(pRx->auData + _get_header_size(), pRx->u8Len - _get_header_size(), pRx->u8Len - _get_header_size());
-			rx._network_handled = 0;
+			rx._network_handled = true;
 		} 
 	} 
 }

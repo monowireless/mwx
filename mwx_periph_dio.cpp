@@ -116,14 +116,14 @@ void attachIntDio(uint8_t u8pin, E_PIN_INT_MODE eMode) {
 		return;
 	}
 
-	vAHI_DioInterruptEnable(bm, 0);
-
 	if (eMode == PIN_INT_MODE::RISING) {
 		vAHI_DioInterruptEdge(bm, 0);
 	}
 	else if (eMode == PIN_INT_MODE::FALLING) { // || eMode == PIN_INT_MODE::CHANGE) {
 		vAHI_DioInterruptEdge(0, bm);
 	}
+
+	vAHI_DioInterruptEnable(bm, 0);
 }
 
 // unset interrupt handler for DIO

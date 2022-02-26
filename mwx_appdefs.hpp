@@ -21,11 +21,7 @@ const uint32_t _MWX_EV_ON_MESSAGE = 6;
 namespace mwx { inline namespace L1 {
 	template <class T> class appdefs_crtp;
 
-	/**
-	 * appdefs_crtp<T> の仮想化クラス
-	 *  - インタフェースメソッドを呼び出すことを目的とする
-	 */
-	class appdefs_virt {
+	struct appdefs_ftbl {
 		void* p_body; // appdefs_crtp<T>* 型
 		uint8(*pf_cbTweNet_u8HwInt)(void* pObj, uint32_t u32DeviceId, uint32_t u32ItemBitmap);
 		void (*pf_cbTweNet_vHwEvent)(void* pObj, uint32_t u32DeviceId, uint32_t u32ItemBitmap);
@@ -36,18 +32,26 @@ namespace mwx { inline namespace L1 {
 
 		void (*pf_on_event)(void* pObj, uint32_t ev, uint32_t& opt);
 
-	public:
-		static const uint32_t OPT_EV_ON_EARLY_WAKEUP = 0x00000001;
-		void set_opt_mask(uint32_t u32ev) { _u32_opt_event_mask = u32ev; }
-		uint32_t get_opt_mask() const { return _u32_opt_event_mask; }
-		
-	private:
 		uint32_t _u32_opt_event_mask;
+	};
+
+	/**
+	 * appdefs_crtp<T> の仮想化クラス
+	 *  - インタフェースメソッドを呼び出すことを目的とする
+	 */
+	class appdefs_virt {
+		appdefs_ftbl *_pftbl;
 
 	public:
-		appdefs_virt() {
-			setup();
-		}
+		static const uint32_t OPT_EV_ON_EARLY_WAKEUP = 0x00000001;
+		void set_opt_mask(uint32_t u32ev) { if(_pftbl) _pftbl->_u32_opt_event_mask = u32ev; }
+		uint32_t get_opt_mask() const { return _pftbl ? _pftbl->_u32_opt_event_mask : 0xdeadbeef; }
+		
+	private:
+		//uint32_t _u32_opt_event_mask;
+
+	public:
+		appdefs_virt() : _pftbl(nullptr) { }
 
 		~appdefs_virt() {
 			// so far, not assuming deleting this object.
@@ -58,87 +62,96 @@ namespace mwx { inline namespace L1 {
 		// destruct the object (not used function)
 		template <class T>
 		void unuse() {
-			if (p_body) {
-				T* p = static_cast<T*>(p_body);
-				p_body = nullptr;
+			if (_pftbl && _pftbl->p_body) {
+				T* p = static_cast<T*>(_pftbl->p_body);
+				_pftbl->p_body = nullptr;
 				delete p;
 			}
 		}
 
 		template <class T>
 		appdefs_virt& operator = (const T& ref) {
-			static_assert(std::is_base_of<appdefs_crtp<T>, T>::value == true, "is not base of appdefs_crtp<T>.");
-			p_body = (void*)&ref; // note: never put pointer of appdefs_crtp<T> type, but shall be type T!
-								  //       in some case, appdefs_crtp<T>* is not same with T*!!!
+			setup();
 
-			pf_cbTweNet_u8HwInt = ref._cbTweNet_u8HwInt;
-			pf_cbTweNet_vHwEvent = ref._cbTweNet_vHwEvent;
-			pf_cbTweNet_vMain = ref._cbTweNet_vMain;
-			pf_cbTweNet_vNwkEvent = ref._cbTweNet_vNwkEvent;
-			pf_cbTweNet_vRxEvent = ref._cbTweNet_vRxEvent;
-			pf_cbTweNet_vTxEvent = ref._cbTweNet_vTxEvent;
-			pf_on_event = ref._on_event;
+			static_assert(std::is_base_of<appdefs_crtp<T>, T>::value == true, "is not base of appdefs_crtp<T>.");
+			_pftbl->p_body = (void*)&ref; // note: never put pointer of appdefs_crtp<T> type, but shall be type T!
+								          //       in some case, appdefs_crtp<T>* is not same with T*!!!
+
+			// saves static function pointers
+			_pftbl->pf_cbTweNet_u8HwInt = ref._cbTweNet_u8HwInt;
+			_pftbl->pf_cbTweNet_vHwEvent = ref._cbTweNet_vHwEvent;
+			_pftbl->pf_cbTweNet_vMain = ref._cbTweNet_vMain;
+			_pftbl->pf_cbTweNet_vNwkEvent = ref._cbTweNet_vNwkEvent;
+			_pftbl->pf_cbTweNet_vRxEvent = ref._cbTweNet_vRxEvent;
+			_pftbl->pf_cbTweNet_vTxEvent = ref._cbTweNet_vTxEvent;
+			_pftbl->pf_on_event = ref._on_event;
 
 			return *this;
 		}
 
 		void setup() {
-			p_body = nullptr;
-			pf_cbTweNet_u8HwInt = nullptr;
-			pf_cbTweNet_vHwEvent = nullptr;
-			pf_cbTweNet_vMain = nullptr;
-			pf_cbTweNet_vNwkEvent = nullptr;
-			pf_cbTweNet_vRxEvent = nullptr;
-			pf_cbTweNet_vTxEvent = nullptr;
+			if (_pftbl == nullptr) {
+				_pftbl = new appdefs_ftbl{};
+				memset(_pftbl, 0, sizeof(appdefs_ftbl));
+			}
 
-			pf_on_event = nullptr;
+			/*
+			_pftbl->p_body = nullptr;
+			_pftbl->pf_cbTweNet_u8HwInt = nullptr;
+			_pftbl->pf_cbTweNet_vHwEvent = nullptr;
+			_pftbl->pf_cbTweNet_vMain = nullptr;
+			_pftbl->pf_cbTweNet_vNwkEvent = nullptr;
+			_pftbl->pf_cbTweNet_vRxEvent = nullptr;
+			_pftbl->pf_cbTweNet_vTxEvent = nullptr;
+			_pftbl->pf_on_event = nullptr;
 
-			_u32_opt_event_mask = 0;
+			_pftbl->_u32_opt_event_mask = 0;
+			*/
 		}
 
 		inline void cbToCoNet_vMain(void) {
-			if (pf_cbTweNet_vMain != nullptr)
-				pf_cbTweNet_vMain(p_body);
+			if (_pftbl && _pftbl->pf_cbTweNet_vMain)
+				_pftbl->pf_cbTweNet_vMain(_pftbl->p_body);
 		}
 
 		inline void cbToCoNet_vNwkEvent(mwx::packet_ev_nwk& pEvNwk) {
-			if (pf_cbTweNet_vNwkEvent != nullptr)
-				pf_cbTweNet_vNwkEvent(p_body, pEvNwk);
+			if (_pftbl && _pftbl->pf_cbTweNet_vNwkEvent)
+				_pftbl->pf_cbTweNet_vNwkEvent(_pftbl->p_body, pEvNwk);
 		}
 
 		inline void cbToCoNet_vRxEvent(mwx::packet_rx &rx) {
-			if (pf_cbTweNet_vRxEvent != nullptr) {
+			if (_pftbl && _pftbl->pf_cbTweNet_vRxEvent) {
 				// wrap with twenet
-				pf_cbTweNet_vRxEvent(p_body, rx);
+				_pftbl->pf_cbTweNet_vRxEvent(_pftbl->p_body, rx);
 			}
 		}
 
 		inline void cbToCoNet_vTxEvent(mwx::packet_ev_tx& pEvTx) {
-			if (pf_cbTweNet_vTxEvent != nullptr)
-				pf_cbTweNet_vTxEvent(p_body, pEvTx);
+			if (_pftbl && _pftbl->pf_cbTweNet_vTxEvent)
+				_pftbl->pf_cbTweNet_vTxEvent(_pftbl->p_body, pEvTx);
 		}
 
 		inline void cbToCoNet_vHwEvent(uint32_t u32DeviceId, uint32_t u32ItemBitmap) {
-			if (pf_cbTweNet_vHwEvent != nullptr)
-				pf_cbTweNet_vHwEvent(p_body, u32DeviceId, u32ItemBitmap);
+			if (_pftbl && _pftbl->pf_cbTweNet_vHwEvent)
+				_pftbl->pf_cbTweNet_vHwEvent(_pftbl->p_body, u32DeviceId, u32ItemBitmap);
 		}
 
 		inline uint8_t cbToCoNet_u8HwInt(uint32_t u32DeviceId, uint32_t u32ItemBitmap) {
 			bool bRet = false;
-			if (pf_cbTweNet_u8HwInt != nullptr)
-				bRet = (bool)pf_cbTweNet_u8HwInt(p_body, u32DeviceId, u32ItemBitmap);
+			if (_pftbl && _pftbl->pf_cbTweNet_u8HwInt)
+				bRet = (bool)_pftbl->pf_cbTweNet_u8HwInt(_pftbl->p_body, u32DeviceId, u32ItemBitmap);
 			return bRet;
 		}
 		
 		inline void on_event(uint32_t ev, uint32_t &opt) {
-			if (pf_on_event != nullptr)
-				pf_on_event(p_body, ev, opt);
+			if (_pftbl && _pftbl->pf_on_event)
+				_pftbl->pf_on_event(_pftbl->p_body, ev, opt);
 		}
 
 		// not type safe, be care!
 		template <class T> inline T& cast();
 		
-		inline operator bool() { return p_body != nullptr;  }
+		inline operator bool() { return _pftbl != nullptr;  }
 	};
 
 
@@ -237,7 +250,7 @@ namespace mwx { inline namespace L1 {
 		static_assert(std::is_base_of<appdefs_crtp<T>, T>::value == true, "is not base of appdefs_crtp<T>.");
 
 		// casting from void*, carefully.
-		return *reinterpret_cast<T*>(p_body);
+		return *reinterpret_cast<T*>(_pftbl->p_body);
 	}
 }}
 

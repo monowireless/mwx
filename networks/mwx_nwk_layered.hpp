@@ -11,12 +11,10 @@
 #include <utility>
 
 namespace mwx { inline namespace L1 {
-	struct NwkSimple_Config {
-		uint8_t u8Lid;
-		uint8_t u8RepeatMax;
+	struct NwkLayered_Config {
+		uint8_t u8Role; // used for network role.
 		uint8_t u8Type;
 		uint8_t u8Cmd; // b0..b3:Packet Cmd, b7:encrypt b6:enc+rcv plain
-		uint8_t u8RetryDefault;
 		bool_t bRcvNwkLess;
 
 		uint8_t get_pkt_cmd_part() { return u8Cmd & 0x07; }
@@ -25,11 +23,11 @@ namespace mwx { inline namespace L1 {
 	};
 	
 	template <class T>
-	class packet_tx_nwk_simple : public mwx::packet_tx {
+	class packet_tx_nwk_layered : public mwx::packet_tx {
 		T *_this;
 
 	public:
-		packet_tx_nwk_simple(T *p) : _this(p) {}
+		packet_tx_nwk_layered(T *p) : _this(p) {}
 
 		//operator mwx::packet_tx& () { return *static_cast<mwx::packet_tx*>(this); }
 				// has -Wclass-conversion error, may not be necessary. to be removed.
@@ -40,22 +38,22 @@ namespace mwx { inline namespace L1 {
 	public:
 		// using mwx::packet_tx::operator <<;
 		// override some operator by changing return class.
-		inline packet_tx_nwk_simple& operator << (mwx::tx_addr&& a) {
+		inline packet_tx_nwk_layered& operator << (mwx::tx_addr&& a) {
 			mwx::packet_tx::operator<<(std::forward<mwx::tx_addr&&>(a));
 			return *this;
 		}
 
-		inline packet_tx_nwk_simple& operator << (mwx::tx_retry&& a) {
+		inline packet_tx_nwk_layered& operator << (mwx::tx_retry&& a) {
 			mwx::packet_tx::operator<<(std::forward<mwx::tx_retry&&>(a));
 			return *this;
 		}
 
-		inline packet_tx_nwk_simple& operator << (mwx::tx_packet_delay&& a) {
+		inline packet_tx_nwk_layered& operator << (mwx::tx_packet_delay&& a) {
 			mwx::packet_tx::operator<<(std::forward<mwx::tx_packet_delay&&>(a));
 			return *this;
 		}
 
-		inline packet_tx_nwk_simple& operator << (mwx::tx_process_immediate&& a) {
+		inline packet_tx_nwk_layered& operator << (mwx::tx_process_immediate&& a) {
 			mwx::packet_tx::operator<<(std::forward<mwx::tx_process_immediate&&>(a));
 			return *this;
 		}
@@ -66,43 +64,49 @@ namespace mwx { inline namespace L1 {
 		inline mwx::packet_tx& operator << (mwx::tx_packet_type_id&&) = delete;
 	};
 
-	class NwkSimple : MWX_APPDEFS_CRTP(NwkSimple)
+	class NwkLayered : MWX_APPDEFS_CRTP(NwkLayered)
 	{
 		friend class mwx::packet_rx;
 		friend class mwx::packet_tx;
 
 	public:
-		static const uint8_t TYPE_ID = mwx::NETWORK::SIMPLE;
+		static const uint8_t TYPE_ID = mwx::NETWORK::LAYERED;
 
 		// load common definition for handlers
-#       define __MWX_APP_CLASS_NAME NwkSimple
+#       define __MWX_APP_CLASS_NAME NwkLayered
 #       include "../_mwx_cbs_hpphead.hpp"
 #       undef __MWX_APP_CLASS_NAME
 
 	private:
 		static const uint8_t CBID_MASK = 31;
-		duplciate_checker _dupchk;
-		NwkSimple_Config _config;
+		NwkLayered_Config _config;
 
-		// duplicate checker (from TWENET C library)
-		void _init_dup_check();
+		tsToCoNet_Nwk_Context *_pContextNwk; //!< ネットワークコンテキスト
+		tsToCoNet_NwkLyTr_Config _sNwkLayerTreeConfig; //!< LayerTree の設定情報
 
 	public:
 		// constructor
-		NwkSimple() : _config{ 0 } {}
+		NwkLayered() : _pContextNwk(nullptr) {
+			memset(&_config, 0, sizeof(_config));
+			_config.u8Role = ROLE_PARENT; // default is parent.
+			_config.u8Type = 0x80;
+
+			memset(&_sNwkLayerTreeConfig, 0, sizeof(_sNwkLayerTreeConfig));
+		}
 
 		// begin method (if necessary, start object here)
 		void begin();
 
 	public: // TWENET callback handler (mandate)
 		void network_event(mwx::packet_ev_nwk& pEvNwk) {
-			// so far, all network events are ignored.
-			pEvNwk._network_handled = false;
+			// so far, all network events are passed.
+			pEvNwk._network_type = _config.u8Type;
+			pEvNwk._network_handled = true;
 		}
 
 		void transmit_complete(mwx::packet_ev_tx& pEvTx) {
 			// if user sent packet, report to user class. otherwise (like repeat packets) not.
-			if (the_mac.is_cbid(pEvTx.u8CbId)) {
+			if (the_mac.is_cbid_nwk(pEvTx.u8CbId)) {
 				pEvTx._network_type = _config.u8Type;
 				pEvTx._network_handled = true;
 			}
@@ -111,42 +115,30 @@ namespace mwx { inline namespace L1 {
 		void receive(mwx::packet_rx& rx);
 
 	public:
-		MWX_APIRET transmit(packet_tx_nwk_simple<NwkSimple>& pkt);
+		MWX_APIRET transmit(packet_tx_nwk_layered<NwkLayered>& pkt);
 		
 		/**
-		 * @fn	mwx::packet_tx NwkSimple::prepare_tx_packet()
+		 * @fn	mwx::packet_tx NwkLayered::prepare_tx_packet()
 		 *
 		 * @brief	returns tx packet for network transmit.
 		 *
 		 * @returns	A mwx::packet_tx.
 		 */
-		packet_tx_nwk_simple<NwkSimple> prepare_tx_packet() {
-			packet_tx_nwk_simple<NwkSimple> pkt(this);
-
-			if (_config.u8Type == 0x01) {
-				pkt.get_payload().reserve_head(_get_header_size());
-				pkt.get_psTxDataApp()->u8Retry = _config.u8RetryDefault;
-			}
+		packet_tx_nwk_layered<NwkLayered> prepare_tx_packet() {
+			packet_tx_nwk_layered<NwkLayered> pkt(this);
 
 			return pkt;
 		}
 
-	private:
-		/**
-		 * @fn	inline int NwkSimple::_get_header_size()
-		 *
-		 * @brief	Gets header size of packet payload.
-		 *
-		 * @returns	The header size.
-		 */
-		inline int _get_header_size() {
-			return 11; // type == 1
-		}
 
 	public: // never called the following as hardware class, but define it!
 		void loop() {}
 		void warmboot(uint32_t& val) {}
-		void wakeup(uint32_t& val) {}
+		void wakeup(uint32_t& val) {
+			if (_pContextNwk) {
+				ToCoNet_Nwk_bResume(_pContextNwk);
+			}
+		}
 
 	public: // implement system message call
 		void on_sleep(uint32_t& val) {}
@@ -155,33 +147,22 @@ namespace mwx { inline namespace L1 {
 		void on_message(uint32_t& val) {}
 
 	public: // configurations (setups)
-		struct logical_id {
-			uint16_t _val;
-			logical_id(uint8_t val) : _val(val) {}
-		};
-		NwkSimple& operator << (logical_id&& v) { _config.u8Lid = v._val; return *this;  }
-
-		struct repeat_max {
+		struct network_role {
 			uint8_t _val;
-			repeat_max(uint8_t val) : _val(val) {}
+			network_role(uint8_t val) : _val(val) {}
 		};
-		NwkSimple& operator << (repeat_max&& v) { _config.u8RepeatMax = v._val; return *this; }
-
-		struct network_type {
-			uint8_t _val;
-			network_type(uint16_t val) : _val(val) {}
-		};
-		NwkSimple& operator << (network_type&& v) { _config.u8Type = v._val; return *this; }
+		NwkLayered& operator << (network_role&& v) { _config.u8Role = v._val; return *this; }
 
 		struct secure_pkt {
 			const uint8_t *_pukey;
 			bool _b_recv_plain_pkt;
 			secure_pkt(const uint8_t *pukey = nullptr, bool b_recv_plain_pkt = false) : _pukey(pukey), _b_recv_plain_pkt(b_recv_plain_pkt)  {}
 		};
-		NwkSimple& operator << (secure_pkt&& v) {
+		NwkLayered& operator << (secure_pkt&& v) {
 			if (v._pukey != nullptr) {
 				the_twelite.register_crypt_key((uint8*)v._pukey); // set enc key
 			}
+
 			_config.u8Cmd |= 0x80; // enc mode
 			if (v._b_recv_plain_pkt) _config.u8Cmd |= 0x40; // rcv plain
 			return *this;
@@ -191,37 +172,18 @@ namespace mwx { inline namespace L1 {
 			bool _b;
 			receive_nwkless_pkt(bool b = true) : _b(b) {}
 		};
-		NwkSimple& operator << (receive_nwkless_pkt&& v) { _config.bRcvNwkLess = v._b; return *this; }
+		NwkLayered& operator << (receive_nwkless_pkt&& v) { _config.bRcvNwkLess = v._b; return *this; }
 
-		struct dup_check {
-			uint8_t _maxnodes;
-			uint16_t _timeout_ms;
-			uint8_t _tickscale;
 
-			dup_check(uint8_t maxnodes = 0, uint16_t timeout_ms = 0, uint8_t tickscale = 0) :
-					_maxnodes(maxnodes), _timeout_ms(timeout_ms), _tickscale(tickscale) {}
-		};
-		NwkSimple& operator << (dup_check&& v) {
-			_dupchk.setup(v._maxnodes, v._timeout_ms, v._tickscale);
-			return *this;
-		}
-
-		struct retry_default {
-			uint8_t _val;
-			retry_default(uint8_t v = 2) : _val(v) {}
-		};
-		NwkSimple& operator << (retry_default&& v) { _config.u8RetryDefault = v._val; return *this; }
-
-		// apply interactive mode settings.
-		NwkSimple& operator << (mwx::StgsStandard& set) {
-			_config.u8Lid = set.u8devid();
-			if (!set.is_hidden(E_STGSTD_SETID::POWER_N_RETRY)) {
-				_config.u8RetryDefault = set.u8retry();
-			}
-			return *this;
-		}
 public:
-		const NwkSimple_Config& get_config() const { return _config; }
+		const NwkLayered_Config& get_config() const { return _config; }
+
+public:
+		static const uint8_t ROLE_ENDDEVICE = TOCONET_NWK_ROLE_ENDDEVICE;
+		static const uint8_t ROLE_ROUTER = TOCONET_NWK_ROLE_ROUTER;
+		static const uint8_t ROLE_PARENT = TOCONET_NWK_ROLE_PARENT;
+
+		tsToCoNet_Nwk_Context *_get_nwk_context() { return _pContextNwk; }
 	};
 
 }}

@@ -8,11 +8,14 @@
 #include "tweserial.h"
 #include "tweserial_jen.h"
 #include "tweprintf.h"
+#include "tweinteractive.h"
 
 #include "mwx_stream.hpp"
 
 #include <AppHardwareApi.h>
 #include "serial.h"
+
+#include <memory>
 
 namespace mwx { inline namespace L1 {
 	// calculate baud/100 avoiding division.
@@ -93,7 +96,7 @@ namespace mwx { inline namespace L1 {
 		static bool is_nullificate(TWE_tsFILE* psSer) {
 			return (get_surrobj_purpose(psSer) & SURR_OBJ_PURPOSE_OPT_FORCE_OUTPUT);
 		}
-		
+
 	public:
 		// parameters for begin()
 		struct E_CONF {

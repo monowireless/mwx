@@ -9,6 +9,7 @@
 #include <utility>
 #include <initializer_list>
 #include <algorithm>
+#include <memory>
 #include "mwx_utils_smplque.hpp"
 
 #include <jendefs.h>
@@ -20,6 +21,13 @@
 
 namespace mwx { inline namespace L1 {
 	namespace WIRE_CONF {
+		// WireHz IDs
+		const uint8_t WIRE_12_5KHZ = 255;
+		const uint8_t WIRE_16_6KHZ = 191;
+		const uint8_t WIRE_20KHZ = 159;
+		const uint8_t WIRE_25KHZ = 127;
+		const uint8_t WIRE_33KHZ = 95;
+		const uint8_t WIRE_40KHZ = 79;
 		const uint8_t WIRE_50KHZ = 63;
 		const uint8_t WIRE_66KHZ = 47;
 		const uint8_t WIRE_80KHZ = 39;
@@ -31,12 +39,21 @@ namespace mwx { inline namespace L1 {
 		const uint8_t WIRE_320KHZ = 9;
 		const uint8_t WIRE_400KHZ = 7;
 
+		// get WireHz by WireHz ID
+		constexpr uint32_t u32WireHz_by_WireHzID(uint8_t v) {
+			return 3200000UL / (v + 1);
+		}
+
+		// get WireHz ID by Wire Hz
+		constexpr uint8_t u8WireHzID_by_WireHz(uint32_t speed) {
+			return (3200000UL / speed) - 1;
+		}
+
 		const uint8_t WIRE_SPEED_MASK = 0x3F;
 		const uint8_t WIRE_PORT_ALT_MASK = 0x40;
 		const uint8_t WIRE_PORT_INIT_MASK = 0x80;
 	}
 
-	template <int SIZ = MWX_TWOWIRE_BUFF>
 	class periph_twowire {
 		static const int DLVL = 99;
 		friend class reader;
@@ -44,11 +61,10 @@ namespace mwx { inline namespace L1 {
 	public:
 		typedef uint8_t size_type;
 		typedef uint8_t value_type;
-
 		
 	private:
 		/** @brief	internal queue to store read bytes. */
-		mwx::smplque<value_type, mwx::alloc_local<value_type, SIZ>> _que;
+		mwx::smplque<value_type, mwx::alloc_heap<value_type>> _que;
 
 		uint8_t _mode;
 		uint8_t _addr;
@@ -110,7 +126,7 @@ namespace mwx { inline namespace L1 {
 			size_type operator() (const value_type val) { return _wire.write(val); }
 			size_type operator() (const value_type* p_data, size_type quantity) { return _wire.write(p_data, quantity); }
 			template <typename T, int S> inline size_type operator() (const T(&ary)[S]) { return _wire.write<S>(ary); }
-			size_type operator() (std::initializer_list<const value_type>&& list) { return _wire.write(list); }
+			size_type operator() (std::initializer_list<const value_type>& list) { return _wire.write(list); }
 
 			// override it (default output is printf("%d", value) style, but it should assume byte input here.
 			// using SUPER::operator<<;
@@ -281,7 +297,9 @@ namespace mwx { inline namespace L1 {
 		 * @brief	Default constructor
 		 *
 		 */
-		periph_twowire() : _que(), _addr(ADDR_UNSET), _mode(MODE_NONE), _speed_and_portalt(0) { }
+		periph_twowire(uint8_t que_size = MWX_TWOWIRE_BUFF) : _que(), _addr(ADDR_UNSET), _mode(MODE_NONE), _speed_and_portalt(0) {
+			_que.reserve(MWX_TWOWIRE_BUFF);
+		}
 
 		/**
 		 * @fn	void begin(const uint8_t u8mode = WIRE_100KHZ)
@@ -328,7 +346,7 @@ namespace mwx { inline namespace L1 {
 			_speed_and_portalt &= ~WIRE_CONF::WIRE_PORT_INIT_MASK; // clear init bit
 			
 			// restart it!
-			if (_speed_and_portalt) {
+			if (_speed_and_portalt) { // if already initialized.
 				_init_hw();
 			}
 		}
@@ -344,7 +362,7 @@ namespace mwx { inline namespace L1 {
 		 *
 		 * @param	u8address	The address.
 		 * @param	length   	The length to read.# set APP_TWENET_BASE
-		 * @param	b_stop   	True to stop. (TODO: not supported)
+		 * @param	b_stop   	True to stop. (Note: this flag is not supported)
 		 *
 		 * @returns	An uint8_t.
 		 */
@@ -356,14 +374,7 @@ namespace mwx { inline namespace L1 {
 			
 			// Send address with write bit set
 			vAHI_SiMasterWriteSlaveAddr(u8address, !E_AHI_SI_SLAVE_RW_SET);
-			vAHI_SiMasterSetCmdReg(
-				E_AHI_SI_START_BIT,
-				E_AHI_SI_NO_STOP_BIT,
-				E_AHI_SI_NO_SLAVE_READ,
-				E_AHI_SI_SLAVE_WRITE,
-				E_AHI_SI_SEND_ACK,
-				E_AHI_SI_NO_IRQ_ACK);
-			if (!busy_wait()) return 0;
+			if (!cmd_rx_start()) return 0;
 
 			// Read data
 			while (length > 0) {
@@ -371,23 +382,11 @@ namespace mwx { inline namespace L1 {
 			
 				if (length == 0 && b_send_stop) {
 					// send with stop
-					vAHI_SiMasterSetCmdReg(
-						E_AHI_SI_NO_START_BIT,
-						E_AHI_SI_STOP_BIT,
-						E_AHI_SI_SLAVE_READ,
-						E_AHI_SI_NO_SLAVE_WRITE,
-						E_AHI_SI_SEND_NACK,
-						E_AHI_SI_NO_IRQ_ACK);
-
+					cmd_tx_stop(false);
 				}
 				else {
-					vAHI_SiMasterSetCmdReg(
-						E_AHI_SI_NO_START_BIT,
-						E_AHI_SI_NO_STOP_BIT,
-						E_AHI_SI_SLAVE_READ,
-						E_AHI_SI_NO_SLAVE_WRITE,
-						E_AHI_SI_SEND_ACK,
-						E_AHI_SI_NO_IRQ_ACK);
+					// sent without stop
+					cmd_tx_no_stop(false);
 				}
 
 				// busy wait
@@ -478,7 +477,7 @@ namespace mwx { inline namespace L1 {
 		 *
 		 * @returns	A size_type.
 		 */
-		size_type write(std::initializer_list<const value_type>&& list) {
+		size_type write(std::initializer_list<const value_type>& list) {
 			size_type ct = 0;
 			for (const value_type x : list) { write(x); ct++; }
 			return ct;
@@ -495,16 +494,8 @@ namespace mwx { inline namespace L1 {
 		void beginTransmission(uint8_t address) {
 			// set destination addr
 			vAHI_SiMasterWriteSlaveAddr(address, E_AHI_SI_SLAVE_RW_SET);
-			vAHI_SiMasterSetCmdReg(
-				E_AHI_SI_START_BIT,
-				E_AHI_SI_NO_STOP_BIT,
-				E_AHI_SI_NO_SLAVE_READ,
-				E_AHI_SI_SLAVE_WRITE,
-				E_AHI_SI_SEND_ACK,
-				E_AHI_SI_NO_IRQ_ACK);
-
-			if (!busy_wait()) return;
-
+			if (!cmd_tx_start()) return;
+			
 			// on success, _addr is set properly
 			_mode = MODE_TX;
 			_addr = address;
@@ -562,14 +553,7 @@ namespace mwx { inline namespace L1 {
 		void beginReceive(uint8_t address) {
 			/* Send address with write bit set */
 			vAHI_SiMasterWriteSlaveAddr(address, !E_AHI_SI_SLAVE_RW_SET);
-
-			vAHI_SiMasterSetCmdReg(
-				E_AHI_SI_START_BIT,
-				E_AHI_SI_NO_STOP_BIT,
-				E_AHI_SI_NO_SLAVE_READ,
-				E_AHI_SI_SLAVE_WRITE,
-				E_AHI_SI_SEND_ACK,
-				E_AHI_SI_NO_IRQ_ACK);
+			if(!cmd_rx_start()) return;
 
 			if (!busy_wait()) return;
 
@@ -586,21 +570,12 @@ namespace mwx { inline namespace L1 {
 		 *
 		 * @returns	An uint8_t.
 		 */
-		uint8_t endReceive(bool sendDummyStop = true) {
+		uint8_t endReceive(bool sendStop = true) {
 			_mode = MODE_NONE;
 			_addr = ADDR_UNSET;
 
-			if (sendDummyStop) {
-				vAHI_SiMasterSetCmdReg(
-					E_AHI_SI_NO_START_BIT,
-					E_AHI_SI_STOP_BIT,
-					E_AHI_SI_SLAVE_READ,
-					E_AHI_SI_NO_SLAVE_WRITE,
-					E_AHI_SI_SEND_NACK,
-					E_AHI_SI_NO_IRQ_ACK);
-
-				if (!busy_wait()) return 4; // 4 is just reffering endTransmission().
-				return 0;
+			if (sendStop) {
+				return cmd_rx_stop() ? 0 : 4; // 4 is just reffering endTransmission().
 			}
 			else {
 				return 0;
@@ -646,6 +621,7 @@ namespace mwx { inline namespace L1 {
 		}
 
 	private:
+
 		/**
 		 * @fn	bool periph_twowire::busy_wait(void)
 		 *
@@ -671,7 +647,19 @@ namespace mwx { inline namespace L1 {
 			return true;
 		}
 
-		inline bool cmd_tx_no_stop() {
+		inline bool cmd_tx_start() {
+			vAHI_SiMasterSetCmdReg(
+				E_AHI_SI_START_BIT,
+				E_AHI_SI_NO_STOP_BIT,
+				E_AHI_SI_NO_SLAVE_READ,
+				E_AHI_SI_SLAVE_WRITE,
+				E_AHI_SI_SEND_ACK,
+				E_AHI_SI_NO_IRQ_ACK);
+
+			return busy_wait();
+		}
+		
+		inline bool cmd_tx_no_stop(bool b_busywait = true) {
 			vAHI_SiMasterSetCmdReg(
 				E_AHI_SI_NO_START_BIT,
 				E_AHI_SI_NO_STOP_BIT,
@@ -680,11 +668,10 @@ namespace mwx { inline namespace L1 {
 				E_AHI_SI_SEND_ACK,
 				E_AHI_SI_NO_IRQ_ACK);
 
-			MWX_DebugMsg(DLVL, "N");
-			return busy_wait();
+			return b_busywait ? busy_wait() : true;
 		}
 
-		inline bool cmd_tx_stop() {
+		inline bool cmd_tx_stop(bool b_busywait = true) {
 			vAHI_SiMasterSetCmdReg(
 				E_AHI_SI_NO_START_BIT,
 				E_AHI_SI_STOP_BIT,
@@ -693,7 +680,19 @@ namespace mwx { inline namespace L1 {
 				E_AHI_SI_SEND_ACK,
 				E_AHI_SI_NO_IRQ_ACK);
 
-			MWX_DebugMsg(DLVL, "S");
+			return b_busywait ? busy_wait() : true;
+		}
+
+		inline bool cmd_rx_start() {
+			vAHI_SiMasterSetCmdReg(
+				E_AHI_SI_START_BIT,
+				E_AHI_SI_NO_STOP_BIT,
+				E_AHI_SI_NO_SLAVE_READ,
+				E_AHI_SI_SLAVE_WRITE,
+				E_AHI_SI_SEND_ACK,
+				E_AHI_SI_NO_IRQ_ACK);
+
+			// busy wait
 			return busy_wait();
 		}
 
@@ -737,4 +736,36 @@ namespace mwx { inline namespace L1 {
 
 	};
 
+	class wrapper_periph_twowire {
+		std::unique_ptr<mwx::periph_twowire> _p;
+
+	public: // create actual object
+		typedef periph_twowire::size_type size_type;
+		typedef periph_twowire::value_type value_type;
+
+		void setup() { _p.reset(new mwx::periph_twowire()); }
+		operator bool() { return (bool)_p; }
+
+	public: // exported interface
+		void begin(const size_type u8speed, bool bForce = true, bool b_portalt = false) { _p->begin(u8speed, bForce, b_portalt); }
+		void begin() { _p->begin(); }
+		void end() { _p->end(); }
+		bool _has_begun() { return _p->_has_begun(); }
+		void _on_sleep() { _p->_on_sleep(); }
+		void _on_wakeup() { _p->_on_wakeup(); }
+		void setClock(uint32_t speed) { _p->setClock(speed); }
+		size_type requestFrom(uint8_t u8address, size_type length, bool b_send_stop = true) { return _p->requestFrom(u8address, length, b_send_stop); }
+		inline int read() { return _p->read(); }
+		size_type write(const value_type val) { return _p->write(val); }
+		size_type write(const value_type* p_data, size_type quantity) { return _p->write(p_data, quantity); }
+		template <typename T, int S> size_type write(const T(&ary)[S]) { return _p->write(ary); }
+		void beginTransmission(uint8_t address) { return _p->beginTransmission(address); }
+		uint8_t endTransmission(bool sendStop = true)  { return _p->endTransmission(sendStop); }
+		size_type available() { return _p->available(); }
+		uint8_t endReceive(bool sendStop = true) { return _p->endReceive(sendStop); }
+		int receive(bool sendStop = false) { return _p->receive(sendStop); }
+		periph_twowire::reader get_reader(uint8_t address, uint8_t read_count = 0) { return _p->get_reader(address, read_count); }
+		periph_twowire::writer get_writer(uint8_t address) { return _p->get_writer(address); }
+		bool probe(uint8_t address) { return _p->probe(address); }
+	};
 }}

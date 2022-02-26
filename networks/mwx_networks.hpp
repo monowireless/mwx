@@ -18,7 +18,7 @@ namespace mwx { inline namespace L1 {
 	namespace NETWORK {
 		static const uint8_t NONE = 0;
 		static const uint8_t SIMPLE = 1;
-		static const uint8_t LAYERTREE = 16;
+		static const uint8_t LAYERED = 16;
 	};
 
 	class twenet_tx_cb_management {
@@ -26,6 +26,12 @@ namespace mwx { inline namespace L1 {
 		uint32_t _bm_l_result;
 		uint32_t _bm_h_active;
 		uint32_t _bm_h_result;
+		uint32_t _bm_n_active;
+		uint32_t _bm_n_result;
+
+		uint8_t	_u8cbid_l;
+		uint8_t	_u8cbid_h;
+		uint8_t	_u8cbid_n;
 
 		inline void _set_on_request(int bit, uint32_t& bm_active, uint32_t& bm_result) {
 			uint32_t m = (1UL << bit);
@@ -44,7 +50,12 @@ namespace mwx { inline namespace L1 {
 		}
 
 	public:
-		twenet_tx_cb_management() : _bm_l_active(0), _bm_h_active(0) {}
+		twenet_tx_cb_management()
+			: _bm_l_active(0), _bm_l_result(0)
+			, _bm_h_active(0), _bm_h_result(0)
+			, _bm_n_active(0), _bm_n_result(0)
+			, _u8cbid_l(0), _u8cbid_h(0), _u8cbid_n(0)
+		{}
 
 		void _tx_request(uint8_t cbid) {
 			if (cbid < 32) {
@@ -52,6 +63,9 @@ namespace mwx { inline namespace L1 {
 			}
 			else if (cbid < 64) {
 				_set_on_request(cbid - 32, _bm_h_active, _bm_h_result);
+			}
+			else if (cbid < 96) {
+				_set_on_request(cbid - 64, _bm_n_active, _bm_n_result);
 			}
 			else {
 				; // ignore...
@@ -64,6 +78,9 @@ namespace mwx { inline namespace L1 {
 			else if (cbid < 64) {
 				_set_on_event(cbid - 32, stat, _bm_h_active, _bm_h_result);
 			}
+			else if (cbid < 96) {
+				_set_on_event(cbid - 64, stat, _bm_n_active, _bm_n_result);
+			}
 			else {
 				; // ignore the event.
 			}
@@ -75,7 +92,10 @@ namespace mwx { inline namespace L1 {
 				b_comp = !((1UL << cbid) & _bm_l_active);
 			}
 			else if (cbid < 64) {
-				b_comp = !((1UL << (cbid -32)) & _bm_h_active);
+				b_comp = !((1UL << (cbid - 32)) & _bm_h_active);
+			}
+			else if (cbid < 96) {
+				b_comp = !((1UL << (cbid - 64)) & _bm_n_active);
 			}
 			return b_comp;
 		}
@@ -88,8 +108,15 @@ namespace mwx { inline namespace L1 {
 			else if (cbid < 64) {
 				b_succ = !((1UL << (cbid - 32)) & _bm_h_result);
 			}
+			else if (cbid < 96) {
+				b_succ = !((1UL << (cbid - 64)) & _bm_n_result);
+			}
 			return b_succ;
 		}
+
+		uint8_t _request_cbid_l() { _u8cbid_l++; return (_u8cbid_l & 0x1F); }
+		uint8_t _request_cbid_h() { _u8cbid_h++; return (_u8cbid_h & 0x1F) + 32; }
+		uint8_t _request_cbid_n() { _u8cbid_n++; return (_u8cbid_n & 0x1F) + 64; }
 	};
 	
 	// note: this queue is not safe, saving discarded queue pointer in TWENET.
@@ -175,6 +202,14 @@ namespace mwx { inline namespace L1 {
 	public:
 		// manage tx completion status.
 		twenet_tx_cb_management tx_status;
+
+		uint8_t request_cbid() { return tx_status._request_cbid_l(); }
+		uint8_t request_cbid_sys() { return tx_status._request_cbid_h(); }
+		uint8_t request_cbid_nwk() { return tx_status._request_cbid_n(); }
+
+		bool is_cbid(uint8_t id) { return (id < 32); }
+		bool is_cbid_sys(uint8_t id) { return (id >= 32 && id < 64); }
+		bool is_cbid_nwk(uint8_t id) { return (id >= 64 && id < 96); }
 	};
 }}
 

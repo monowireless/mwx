@@ -118,6 +118,11 @@ namespace mwx { inline namespace L1 {
 			return alloc::super::_size;
 		}
 
+		// only when alloc_heap is used.
+		inline void reserve(uint16_t size) {
+			alloc::init_heap(size);
+		}
+
 		inline void clear() {
 			INTCTL intr_ctl; // disable interrupt in this scope.
 			intr_ctl.enter();

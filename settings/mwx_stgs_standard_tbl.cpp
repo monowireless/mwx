@@ -4,6 +4,7 @@
 
 // TWELITE hardware like
 #include "mwx_stgs_standard_core.h"
+#include "mwx_stgs_standard_enum.hpp"
 
 /**********************************************************************************
  * SETTINGS TABLE

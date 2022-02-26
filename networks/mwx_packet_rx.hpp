@@ -42,10 +42,15 @@ namespace mwx { inline namespace L1 {
 		uint8_t get_addr_src_lid() { return _addr_src_lid; }
 		void _set_addr_src_lid(uint8_t a) { _addr_src_lid = a; }
 
+		uint8_t get_cmd() { return _pRx->u8Cmd & 0x7; }
+
 		bool is_secure_pkt() { return _pRx->bSecurePkt; }
+
+		uint32_t get_tick_received() { return _pRx->u32Tick; }
 
 	public:
 		uint8_t _get_network_type() { return _network_type; }
+		uint8_t get_network_type() { return _network_type; }
 
 	public:
 		// debug out

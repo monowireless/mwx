@@ -190,7 +190,7 @@ namespace mwx { inline namespace L1 {
 					sToCoNet_AppContext.u8Channel = u8ch_prime;
 					sToCoNet_AppContext.u32ChMask = u32chmask;
 					ToCoNet_vReg_mod_Channel_Mgr();
-					_ToCoNet_Mod_vReg_PRSEV(); // require libTWENET_1_3_4
+					_ToCoNet_Mod_vReg_PRSEV(); // MUST call this when ToCoNet_vReg_mod_xxx() is called manually.
 				}
 			}
 		};
@@ -237,7 +237,7 @@ namespace mwx { inline namespace L1 {
 
 	public:
 		twenet() : receiver(), _setup_finished(0),
-				   board(the_vhw), network(the_vnet), app(the_vapp), settings(the_vsettings) {}
+				   board(the_vhw), network(the_vnet), network2(the_vnet2), app(the_vapp), settings(the_vsettings) {}
 
 		// this shall be run at setup() as the_twelite.begin().
 		void begin() {
@@ -265,6 +265,10 @@ namespace mwx { inline namespace L1 {
 			var = _TWENET_CALLED_FROM_TWE_TWELITE;
 			network.vget().on_event(_MWX_EV_ON_BEGIN, var);
 			network._finish_setup();
+
+			var = _TWENET_CALLED_FROM_TWE_TWELITE;
+			network2.vget().on_event(_MWX_EV_ON_BEGIN, var);
+			network2._finish_setup();
 
 			var = _TWENET_CALLED_FROM_TWE_TWELITE;
 			app.vget().on_event(_MWX_EV_ON_BEGIN, var);
@@ -392,6 +396,7 @@ namespace mwx { inline namespace L1 {
 
 		twenet_instance_manager board;
 		twenet_instance_manager network;
+		twenet_instance_manager network2;
 		twenet_instance_manager app;
 		twenet_instance_manager settings;
 	};

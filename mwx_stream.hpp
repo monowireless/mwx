@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <tuple>
 #include <initializer_list>
+#include <memory>
 
 #include "twecommon.h"
 
@@ -742,6 +743,99 @@ namespace mwx { inline namespace L1 {
 		 * @returns	The pfc outout.
 		 */
 		inline tfcOutput get_pfcOutout() { return get_Derived()->vOutput; }
+	};
+
+	/*
+	 * add an interface to wapper class which  inherits mwx::stream<>.
+	 *
+	 *  e.g. class wapper_serial_jen : public _wrapper_stream<mwx::serial_jen> { ... };
+	 */
+	template <class D>
+	class _wrapper_stream {
+	public:
+		using obj_type = D;
+
+	protected:
+		std::unique_ptr<obj_type> _up;
+		obj_type& ref() { return *_up; }
+
+	public: // stream interface.
+		bool _setup_finished() { return ref()._setup_finished(); }
+
+		size_t _print(typename obj_type::_value_type_s &&v, uint8_t nFormat, bool ln = false) { return ref()._print(v, nFormat, ln); }
+		size_t print(char val, int nFormat = DEC) { return ref().print(val, nFormat); }
+		size_t print(int8_t val, int nFormat = DEC) { return ref().print(val, nFormat);  }
+		size_t print(int16_t val, int nFormat = DEC) { return ref().print(val, nFormat); }
+		size_t print(int32_t val, int nFormat = DEC) { return ref().print(val, nFormat); }
+		size_t println(char val, int nFormat = DEC) { return ref().println(val, nFormat); }
+		size_t println(int8_t val, int nFormat = DEC) { return ref().println(val, nFormat); }
+		size_t println(int16_t val, int nFormat = DEC) { return ref().println(val, nFormat); }
+		size_t println(int32_t val, int nFormat = DEC) { return ref().println(val, nFormat); }
+#if !defined(TWE_STDINOUT_ONLY)
+		size_t print(int val, int nFormat = DEC) { return ref().print(val, nFormat); }
+		size_t println(int val, int nFormat = DEC) { return ref().println(val, nFormat); }
+#endif
+		size_t _print(const char *str) { return ref()._print(str); }
+
+		size_t _print(typename obj_type::_value_type_u v, int nFormat = DEC, bool ln = false) { return ref()._print(v, nFormat, ln); }
+		size_t print(uint8_t val, int nFormat = DEC) { return ref().print(val, nFormat); }
+		size_t print(uint16_t val, int nFormat = DEC) { return ref().print(val, nFormat); }
+		size_t print(uint32_t val, int nFormat = DEC) { return ref().print(val, nFormat); }
+		size_t println(uint8_t val, int nFormat = DEC) { return ref().println(val, nFormat); }
+		size_t println(uint16_t val, int nFormat = DEC) { return ref().println(val, nFormat); }
+		size_t println(uint32_t val, int nFormat = DEC) { return ref().println(val, nFormat); }
+#if !defined(TWE_STDINOUT_ONLY)
+		size_t print(unsigned val, int nFormat = DEC) { return ref().print(val, nFormat); }
+		size_t println(unsigned val, int nFormat = DEC) { return ref().println(val, nFormat); }
+#endif
+
+		size_t print(double val, int fix = 2) { return ref().print(val, fix); }
+		size_t println(double val, int fix = 2) { return ref().println(val, fix); }
+
+		size_t print(const char* msg) { return ref().print(msg); }
+		template <int S> size_t print(const char(&msg)[S]) { return ref().print(msg); }
+		template <typename T> size_t print(std::initializer_list<T> &&l) { return ref().print(std::forward<T>(l)); } // ???
+		size_t println(const char* msg) { return ref().println(msg); }
+		template <int S> size_t println(const char(&msg)[S]) { return ref().println(msg); }
+		size_t println() { return ref().println(); }
+		void putchar(char c) { ref().putchar(c); }
+		template <typename... ARGS> size_t printfmt(const char* format, ARGS&&... args) { return ref().printfmt(format, std::forward<ARGS>(args)...); }
+		// void flush()
+		obj_type& operator << (const char* msg) { return ref().operator <<(msg); }
+		obj_type& operator << (char c) { return ref().operator <<(c); }
+		obj_type& operator << (const uint8_t* msg) { return ref().operator <<(msg); }
+		template <int S> obj_type& operator << (const uint8_t(&v)[S]) { return ref().operator <<(v); }
+		obj_type& operator << (uint8_t c) { return ref().operator <<(c); }
+		obj_type& operator << (uint32_t v) { return ref().operator <<(v); }
+		obj_type& operator << (uint16_t v) { return ref().operator <<(v); }
+		obj_type& operator << (int v) { return ref().operator <<(v); }
+		obj_type& operator << (double v) { return ref().operator <<(v); }
+		obj_type& operator << (const mwx::_div_chars&& divc) { return ref().operator <<(divc); }
+		obj_type& operator << (const mwx::div_result_i32&& divr) { return ref().operator <<(divr); }
+		obj_type& operator << (const mwx::div_result_i32& divr){ return ref().operator <<(divr); }
+		obj_type& operator << (mwx::mwx_format&& prt) { return ref().operator <<(std::forward<mwx::mwx_format&&>(prt)); }
+		obj_type& operator << (mwx::MWX_Stream_EndLine& e) { return ref().operator <<(e); }
+		obj_type& operator << (mwx::MWX_Stream_Flush& e) { return ref().operator <<(e); }
+		template <typename T> obj_type& operator << (mwx::bigendian<T>&& v) { return ref().operator <<(v); }
+		template <typename T> obj_type& operator << (std::pair<T*, T*>&& t)  { return ref().operator <<(t); }
+		template <typename T> obj_type& operator << (std::pair<T*, int>&& t)  { return ref().operator <<(t); }
+		obj_type& operator <<  (bytelist&& bl) { return ref().operator <<(bl); }
+
+		uint8_t get_error_status() { return ref().get_error_status(); }
+		void clear_error_status() { ref().clear_error_status();  }
+		void set_timeout(uint8_t centisec) { ref().set_timeout(centisec); }
+
+		obj_type& operator >> (uint32_t& v) { return ref().operator >>(v); }
+		obj_type& operator >> (uint16_t& v) { return ref().operator >>(v); }
+		obj_type& operator >> (uint8_t& v) { return ref().operator >>(v); }
+		obj_type& operator >> (char_t& v) { return ref().operator >>(v); }
+		template <int S> obj_type& operator >> (uint8_t(&v)[S])  { return ref().operator >>(v); }
+		template <typename T> obj_type& operator >> (mwx::bigendian<T>& v) { return ref().operator >>(v); }
+		template <typename T> obj_type& operator >> (mwx::null_stream&& p) { return ref().operator >>(p); }
+
+		void* get_pvOutputContext() { return ref().get_pvOutputContext(); }
+		void  set_pvOutputContext(void *p) { ref().set_pvOutputContext(p); }
+		tfcOutput get_pfcOutout() { return ref().get_pfcOutout(); }
 	};
 
 	template <class T>

@@ -1,6 +1,6 @@
-/* Copyright (C) 2020 Mono Wireless Inc. All Rights Reserved.    *
- * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
- * AGREEMENT).                                                   */
+/* Copyright (C) 2020-2021 Mono Wireless Inc. All Rights Reserved. *
+ * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE     *
+ * AGREEMENT).                                                     */
 
 // mwx header
 #include "mwx_stgs_standard.hpp"
@@ -11,6 +11,7 @@
 // default value of interactive mode (app specific.)
 const char *INTRCT_USER_APP_NAME = "APP";
 uint32_t INTRCT_USER_APP_ID = 0x1234abcd;
+uint32_t INTRCT_USER_APP_VER = 0x000100;
 
 /*****************************************************************/
 namespace mwx {
