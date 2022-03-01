@@ -431,15 +431,20 @@ extern "C" void cbToCoNet_vTxEvent(uint8 u8CbId, uint8 bStatus) {
 	if (the_vnet) {
 		the_vnet.cbToCoNet_vTxEvent(ev);
 	}
+	if(the_vnet2 && !ev._network_handled) {
+		the_vnet2.cbToCoNet_vTxEvent(ev);
+	}
 
 	// if the network layer does not handle the event, put TX event to other parts.
-	if (!ev._network_handled) {
+	if (ev._network_handled) {
 		bool_t b_handled = true;
 		on_tx_comp(ev, b_handled);
-		
-		if (the_vapp) the_vapp.cbToCoNet_vTxEvent(ev);
-		if (the_vhw) the_vhw.cbToCoNet_vTxEvent(ev);
-		if (the_vsettings) { the_vsettings.cbToCoNet_vTxEvent(ev); }
+
+		if (!b_handled) {
+			if (the_vapp) the_vapp.cbToCoNet_vTxEvent(ev);
+			if (the_vhw) the_vhw.cbToCoNet_vTxEvent(ev);
+			if (the_vsettings) the_vsettings.cbToCoNet_vTxEvent(ev);
+		}
 	}
 }
 
