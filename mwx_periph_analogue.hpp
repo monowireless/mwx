@@ -24,7 +24,14 @@ namespace mwx { inline namespace L1 {
 		const uint8_t A4 = 3;
 		const uint8_t VCC = 4;
 
+#if defined(JENNIC_CHIP_JN5164)
 		const uint8_t COUNT_ADC = 5;
+#elif defined(JENNIC_CHIP_JN5169)
+		const uint8_t A5 = 5;
+		const uint8_t A6 = 6;
+
+		const uint8_t COUNT_ADC = 7;
+#endif
 	}
 
 	const uint8_t _ADC_PIN_TO_AHI_DEF[PIN_ANALOGUE::COUNT_ADC] = {
@@ -32,7 +39,11 @@ namespace mwx { inline namespace L1 {
 		E_AHI_ADC_SRC_ADC_2,
 		E_AHI_ADC_SRC_ADC_3,
 		E_AHI_ADC_SRC_ADC_4,
-		E_AHI_ADC_SRC_VOLT
+		E_AHI_ADC_SRC_VOLT,
+#if defined(JENNIC_CHIP_JN5169)
+		E_AHI_ADC_SRC_ADC_5,
+		E_AHI_ADC_SRC_ADC_6,
+#endif		
 	};
 
 	const int16_t ADC_VAL_NOT_YET = SHRT_MIN;
