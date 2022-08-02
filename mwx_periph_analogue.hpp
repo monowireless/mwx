@@ -221,11 +221,15 @@ namespace mwx { inline namespace L1 {
 
 			if (v == ADC_VAL_NOT_YET) return int16_t(v);
 
-			if (s <= PIN_ANALOGUE::A4) { // ADC1..4
-				v = v * 2470 / 1024;
-			}
-			else if (s == PIN_ANALOGUE::VCC) {
+			if (s == PIN_ANALOGUE::VCC) {
 				v = v * 3705 >> 10;
+			}
+#if defined(JENNIC_CHIP_JN5169)
+			else if (s <= PIN_ANALOGUE::A6) { // ADC1..6
+#else
+			else if (s <= PIN_ANALOGUE::A4) { // ADC1..4
+#endif
+				v = v * 2470 / 1024;
 			}
 
 			return (int16_t)v;
