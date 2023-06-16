@@ -271,7 +271,7 @@ void NwkSimple::receive(mwx::packet_rx& rx) {
 			for (auto&& x : rx.get_payload()) {
 				pkt_rpt.get_payload().push_back(x);
 			}
-			rx.get_payload()[10]++; // increment repeat count
+			pkt_rpt.get_payload()[10]++; // increment repeat count
 
 			// set sending parameter
 			pkt_rpt
