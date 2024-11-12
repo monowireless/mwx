@@ -349,7 +349,7 @@ namespace mwx { inline namespace L1 {
 		};
 
 		size_t _print(_value_type_s &&v, uint8_t nFormat, bool ln = false) {
-			const char f[][4] = { "%d", "%b", "%d", "%o", "%X" };
+			const char f[][4] = { "%d", "%b", "%o", "%d", "%X" };
 			int i = 0;
 			switch (nFormat) {
 			case BIN: i = 1; break;
@@ -386,7 +386,7 @@ namespace mwx { inline namespace L1 {
 		}
 
 		size_t _print(_value_type_u v, int nFormat = DEC, bool ln = false) {
-			const char f[][4] = { "%u", "%b", "%u", "%o", "%X" };
+			const char f[][4] = { "%u", "%b", "%o", "%u", "%X" };
 			int i = 0;
 			switch (nFormat) {
 			case BIN: i = 1; break;
