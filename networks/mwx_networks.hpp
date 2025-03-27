@@ -215,3 +215,4 @@ namespace mwx { inline namespace L1 {
 
 extern void on_tx_comp(mwx::packet_ev_tx& ev, bool_t &handled);
 extern void on_rx_packet(mwx::packet_rx& rx, bool_t &handled);
+extern void on_nwk_event(mwx::packet_ev_nwk &pEvNwk, bool_t &b_handled);

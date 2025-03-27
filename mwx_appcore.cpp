@@ -378,9 +378,23 @@ extern "C" void cbToCoNet_vNwkEvent(teEvent eEvent, uint32 u32arg) {
 		the_vnet2.cbToCoNet_vNwkEvent(ev);
 	}
 
+	// network layer recognizes
 	if (ev._network_handled) {
-		if (the_vapp) the_vapp.cbToCoNet_vNwkEvent(ev);
-		if (the_vhw) the_vhw.cbToCoNet_vNwkEvent(ev);
+		if (the_vapp) {
+			the_vapp.cbToCoNet_vNwkEvent(ev);
+		}
+		else {
+			bool_t b_handled = true; // default, handled
+			on_nwk_event(ev, b_handled);
+		}
+	} else {
+		if (!the_vnet && !the_vnet2 && the_vapp) {
+			the_vapp.cbToCoNet_vNwkEvent(ev);
+		}
+		else {
+			bool_t b_handled = true; // default, handled
+			on_nwk_event(ev, b_handled);
+		}
 	}
 }
 
@@ -395,10 +409,15 @@ extern "C" void cbToCoNet_vRxEvent(tsRxDataApp *pRx) {
 	if(the_vnet2 && !rx._network_handled) {
 		the_vnet2.cbToCoNet_vRxEvent(rx);
 	}
+
+	// If incoming packet is handled by either of network (the_vnet or the_vnet2),
+	// escalate an event down to other objs or call on_rx_packet().
 	if (rx._network_handled) {
+		// if app is registered, the app takes care of incoming packets.
 		if (the_vapp) {
 			the_vapp.cbToCoNet_vRxEvent(rx);
 		}
+		// otherwise, global callback on_rx_packet() handles.
 		else {
 			bool_t b_handled = true; // default, handled
 
@@ -411,8 +430,20 @@ extern "C" void cbToCoNet_vRxEvent(tsRxDataApp *pRx) {
 			}
 		}
 
+		// mostly, the following escalation is not used...
 		if (the_vhw) { the_vhw.cbToCoNet_vRxEvent(rx); }
 		if (the_vsettings) { the_vsettings.cbToCoNet_vRxEvent(rx); }
+	} else {
+		// If network is NOT registered but app IS, escalate a packet.
+		// note: this is called frequently, because all retry packets are not filtered by duplicate checker.
+		if (!the_vnet && !the_vnet2 && the_vapp) {
+			the_vapp.cbToCoNet_vRxEvent(rx);
+		}
+		// the packet is not handled by any network (the_vnew, the_vnet2).
+		else {
+			bool_t b_handled = false;
+			on_rx_packet(rx, b_handled);
+		}
 	}
 }
 
@@ -444,6 +475,14 @@ extern "C" void cbToCoNet_vTxEvent(uint8 u8CbId, uint8 bStatus) {
 			if (the_vapp) the_vapp.cbToCoNet_vTxEvent(ev);
 			if (the_vhw) the_vhw.cbToCoNet_vTxEvent(ev);
 			if (the_vsettings) the_vsettings.cbToCoNet_vTxEvent(ev);
+		}
+	}
+	else {
+		bool_t b_handled = false;
+		on_tx_comp(ev, b_handled);
+
+		if (!b_handled && !the_vnet && !the_vnet2 && the_vapp) {
+			the_vapp.cbToCoNet_vTxEvent(ev);
 		}
 	}
 }
@@ -618,6 +657,9 @@ void on_rx_packet(mwx::packet_rx& pkt, bool_t &b_handled) { b_handled = false; }
 
 extern void on_tx_comp(mwx::packet_ev_tx& ev, bool_t &handled) __attribute__((weak));
 void on_tx_comp(mwx::packet_ev_tx& ev, bool_t &b_handled) { b_handled = false; }
+
+extern void on_nwk_event(mwx::packet_ev_nwk &pEvNwk, bool_t &b_handled) __attribute__((weak));
+void on_nwk_event(mwx::packet_ev_nwk &pEvNwk, bool_t &b_handled) { b_handled = false; }
 
 /****************************************************************************/
 /***        END OF FILE                                                   ***/
