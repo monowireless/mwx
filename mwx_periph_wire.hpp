@@ -677,7 +677,7 @@ namespace mwx { inline namespace L1 {
 				E_AHI_SI_STOP_BIT,
 				E_AHI_SI_NO_SLAVE_READ,
 				E_AHI_SI_SLAVE_WRITE,
-				E_AHI_SI_SEND_ACK,
+				E_AHI_SI_SEND_NACK,
 				E_AHI_SI_NO_IRQ_ACK);
 
 			return b_busywait ? busy_wait() : true;
